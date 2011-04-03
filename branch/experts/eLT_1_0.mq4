@@ -376,6 +376,54 @@ double calcVolNormalize(double vol, double divide){
 //======================================================================
 
 /*///===================================================================
+	Версия: 2011.04.03
+	---------------------
+	Описание:
+		Заполняет массив ордеров тек. уровня   
+	---------------------
+	Доп. функции:
+		нет
+	---------------------
+	Переменные:
+		arr - массив ордеров уровня
+		level - уровень
+		wt -  тип, которым выставлялся ордер
+/*///-------------------------------------------------------------------
+int fillLevelOrders(int& arr[], int level, int wt){
+	int res = 0;
+	ArrayResize(arr,1);
+	ArrayInitialize(arr, -1);
+	int dim = ArrayRange(arr, 1);
+	//---
+		int t = OrdersTotal();
+		for(int i = t; i >= 0; i--){
+			//==================
+				if(!OrderSelect(i, SELECT_BY_POS, MODE_TRADES))	continue;
+				//---
+				int ot = OrderTicket();
+				int oty = OrderType();
+				int om = OrderMagicNumber();
+				//---
+				if(!checkOrderByTicket(ot, CHK_MN, "", MN, -1)) continue; // проверим, чтоб ордер был рыночным
+				//---
+				int olevel = getOrderLevel(ot);
+				if(olevel != level) continue;
+				//---
+				int owt = getWasType(ot);
+				if(owt != wt) continue;
+			//==================
+			dim++;
+			ArrayResize(arr, dim);
+			arr[dim-1] = ot;
+		}
+	//---
+	res = dim;
+	return(res);
+}
+//======================================================================
+
+
+/*///===================================================================
    Версия: 2011.03.24
    ---------------------
    Описание:
@@ -702,16 +750,89 @@ void startCheckOrders(){
 				}
 			}
 		//}	
-		//{3.3---
-	
-		for(idx_L = 0; idx_L < ArrayRange(aLevels,1); idx_L++){
-			// Дописать: 2011.03.31
-			for(idx_oty = 2; idx_oty < aL_MAXTY; idx_oty++){
-				if(idx_oty == OP_BUYLIMIT || idx_oty == OP_SELLLIMIT){
-					Print("///");
+		
+		//{3.3 --- обработка тп и сл ордеров уровней
+			int aLevelOrders[];
+		
+			for(idx_L = 1; idx_L < ArrayRange(aLevels,1); idx_L++){
+				// Дописать: 2011.03.31
+				for(idx_oty = 2; idx_oty < aL_MAXTY; idx_oty++){
+					int	dimLO = fillLevelOrders(aLevelOrders, idx_L, idx_oty); // заполнение массива ордеров тек. уровня
+					//{--- 3.3.1 обработка тп и сл для лимитных ордеров
+						if(idx_oty == OP_BUYLIMIT || idx_oty == OP_SELLLIMIT){
+							
+							tp_pip = 0;
+							sl_pip = 0;
+							
+							//{--- 3.3.1.1 если уровень <= maxMarketLevel
+								if(idx_L <= maxMarketLevel){
+									tp_pip	=	getTP(grid_level, maxMarketLevel);
+								}
+							//}
+							
+							//{--- 3.3.1.2 если уровень > maxMarketLevel
+								if(idx_L > maxMarketLevel){
+									tp_pip = getTP(grid_level, idx_L);
+								}
+							//}
+							
+							for(int idx_ord = 0; idx_ord < dimLO; idx_ord++){
+								//======
+									if(!OrderSelect(aLevelOrders[idx_ord],SELECT_BY_TICKET)) continue;
+								//======
+								if(!ModifyOrder_TPSL_pip(aLevelOrders[idx_ord], tp_pip, sl_pip, MN )){
+									addInfo(" CAN'T Modify order: "+aLevelOrders[idx_ord]);
+								}
+							}	
+						}
+					//}
+					
+					//{--- 3.3.2 обработка тп и сл для стоповых ордеров. если стоповый ордер еще отложенный
+						if(idx_oty == OP_BUYSTOP || idx_oty == OP_SELLSTOP){
+							tp_pip = 0;
+							sl_pip = 0;
+							
+							for(idx_ord = 0; idx_ord < dimLO; idx_ord++){
+								int LO_ticket = aLevelOrders[idx_ord];
+								
+								//======
+									if(!OrderSelect(LO_ticket, SELECT_BY_TICKET)) continue;
+								//======
+								int LO_grid_level = getGrid(LO_ticket);
+								//---
+								tp_pip = getTP(LO_grid_level, 0);
+								sl_pip = 0;
+								//---
+								if(!ModifyOrder_TPSL_pip(LO_ticket, tp_pip, sl_pip, MN )){
+									addInfo(" CAN'T Modify order: "+LO_ticket);
+								}
+							}
+						}
+					//}
+					
+					//{--- 3.3.3 обработка добавочных ордеров
+						if(idx_oty == OP_ADD_BUYLIMIT || idx_oty == OP_ADD_SELLLIMIT){
+							tp_pip = 0;
+							sl_pip = 0;
+							
+							for(idx_ord = 0; idx_ord < dimLO; idx_ord++){
+								LO_ticket = aLevelOrders[idx_ord];
+								
+								//======
+									if(!OrderSelect(LO_ticket, SELECT_BY_TICKET)) continue;
+								//======
+								//---
+								tp_pip = getTP(1, 0);
+								sl_pip = 0;
+								//---
+								if(!ModifyOrder_TPSL_pip(LO_ticket, tp_pip, sl_pip, MN )){
+									addInfo(" CAN'T Modify order: "+LO_ticket);
+								}
+							}
+						}
+					//}
 				}
 			}
-		}
 		//}
 	//}
 }
