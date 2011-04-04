@@ -1,11 +1,11 @@
-#summary One-sentence summary of this page.
+﻿#summary One-sentence summary of this page.
 
-= Introduction =
+= Введение =
 
-Add your content here.
+Описание настроек советника "eLT v1.0".
 
 
-= Details =
+= Детали =
 
 Add your content here.  Format your content with:
   * Text in *bold* or _italic_
