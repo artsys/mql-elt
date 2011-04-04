@@ -13,8 +13,8 @@ Add your content here.  Format your content with:
   * Automatic links to other wiki pages
 
 //---- input parameters
-extern         double    TWISE_LOTS        =     20;     // деление ордеров при достижении расчетного значения объема => заданного значения
-extern         int       MN                =     0;      // магик с которым будет работать советник. чужие магики обрабатываться не будут 
+*extern         double    TWISE_LOTS*        =     20;     // деление ордеров при достижении расчетного значения объема => заданного значения
+*extern         int       MN*                =     0;      // магик с которым будет работать советник. чужие магики обрабатываться не будут 
 extern string MGP       = "===== MAIN GRID PROP >>>>>>>>>>>>>>>>>";
 extern         int       mgp_Target        =     25;    //Фиксированное значение таргета (отменяется использованием useAVG_H1 или useAVG_D)
 extern         int       mgp_TargetPlus    =      0;    //увеличение таргета в зависимости от уровня на TargetPlus пунктов
