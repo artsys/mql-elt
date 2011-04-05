@@ -34,6 +34,9 @@
 #define  CHK_TYLESS   300
 #define  CHK_TYEQ     200
 
+#define  TL_COUNT		1	// TL - Twise lot
+#define  TL_VOL			2	// TL - Twise lot
+
 string   EXP_NAME =   "";
 //======================================================================
 string   file_ord =  "";
@@ -55,6 +58,45 @@ string libOrders_Ver(){
    return("v1.0");
 }
 //======================================================================
+
+//===================================================
+//v2
+//+----------------------------------------------------------------------------+
+//    Автор    : Морокин Артём ака artamir <artamir@yandex.ru>
+//+----------------------------------------------------------------------------+
+//    Версия   : 2010.07.04
+//    Описание : Возвращает значение объема или количество ордеров, 
+//               нужное для деления заданного объема
+//+----------------------------------------------------------------------------+
+//    На входе:
+//       nlot      - нужный объем для деления
+//       ulot      - использованны объем (вычитается из нужного)
+//      rejim      - режим выдачи информации(TL_COUNT - количество ордеров, TL_VOL - объем)
+//+----------------------------------------------------------------------------+
+//    На выходе:
+//       в зависимости от режима
+//+----------------------------------------------------------------------------+
+double TwisePending(double nlot,double ulot,int rejim, double TL)
+{
+   double delta = nlot - ulot;
+   //---
+   if(delta <= 0) return(-1);
+   //---
+   double    norders = MathCeil((nlot-ulot)/TL);           // нашли количество ордеров, которое нужно выставить
+   if(norders > 0 && norders < 1)
+      norders = 1;
+   double twlot   = NormalizeDouble((nlot-ulot)/norders,2);   // нашли лот, который нужен
+   
+   twlot = NormalizeLot(twlot, False, "");
+   
+   if(rejim == TL_COUNT)
+      return(norders);
+      
+   if(rejim == TL_VOL)
+      return(twlot);   
+}
+
+//=======================================================
 
 /*///===================================================================
    Версия: 2011.03.24
@@ -79,7 +121,7 @@ bool  isParentOrder(int ticket, int magic){
    int isParent = StrToInteger(ReadIniString(file_ord, ticket, "isParent", "-1"));
    //----
    if(isParent == -1){
-      if(OrderComment() == "" || StrToInteger(returnComment(OrderComment(),"@i")) > -1)
+      if(OrderComment() == "" || StrToInteger(returnComment(OrderComment(),"@ip")) > -1)
          return(true);
       else
          return(false);   
@@ -237,14 +279,23 @@ int OpenMarketSLTP_pip(	string		sy		=	""		,
 						int			MN		=	0		,
 						datetime	exp		=	0		,
 						color		cl		=	CLR_NONE){
-   int res = _OrderSend(sy, cmd, lot, pr, 0, 0, 0, comm, MN, exp, cl);
+						
+	
+   int res = _OrderSend(sy, cmd, lot, pr, 0, 0, 0, comm, MN, exp, libNAME+": OpenMarketSLTP_pip");
    //============
    if(res > -1){
       OrderSelect(res, SELECT_BY_TICKET);
              pr = OrderOpenPrice();
-      double sl = pr + iif(cmd == OP_BUY,-1,1) * sl_pip*Point;
-      double tp = pr + iif(cmd == OP_BUY,1,-1) * tp_pip*Point;
-      
+			 if(sl_pip > 0)
+				double sl = pr + iif(cmd == OP_BUY,-1,1) * sl_pip*Point;
+			else
+				sl = 0;
+			//---
+			if(tp_pip > 0)
+			    double tp = pr + iif(cmd == OP_BUY,1,-1) * tp_pip*Point;
+			else
+				tp = 0;
+			//---
       if( _OrderModify( res, -1, sl, tp, MN, -1, CLR_NONE))
          return(res);   
       else              // заглушка на случай неудачной модификации ордера
@@ -259,7 +310,7 @@ int OpenMarketSLTP_pip(	string		sy		=	""		,
    Версия: 2011.03.24
    ---------------------
    Описание:
-      Запрос на открытие отложенного ордера с отступом х пип от тек. цены 
+      Запрос на открытие отложенного ордера с заданной ценой 
       с выставлением тп и сл в пунктах 
    ---------------------
    Доп. функции:
@@ -273,7 +324,7 @@ int OpenMarketSLTP_pip(	string		sy		=	""		,
 int OpenPendingPRSLTP_pip(	string		sy		=	""			, 
 							int			cmd		=	-1			, 
 							double		lot		=	0			, 
-							int			pr		=	0			, 
+							double		pr		=	0			, 
 							int			sl_pip	=	0			, 
 							int			tp_pip	=	0			, 
 							string		comm	=	""			, 
@@ -284,10 +335,11 @@ int OpenPendingPRSLTP_pip(	string		sy		=	""			,
    if(sy == ""){
       sy = Symbol();
    }
+   
    //----
    double pending_pr = MarketInfo(sy, MODE_BID) + orderDirection(cmd,OP_SORD)*pr*Point;
    
-   int res = _OrderSend(sy, cmd, lot, pending_pr, 0, 0, 0, comm, MN, exp, cl);
+   int res = _OrderSend(sy, cmd, lot, pr, 0, 0, 0, comm, MN, exp, libNAME+": OpenPendingPR_SLTP_pip");
    //============
    if(res > -1){
       OrderSelect(res, SELECT_BY_TICKET);
@@ -295,7 +347,7 @@ int OpenPendingPRSLTP_pip(	string		sy		=	""			,
               double sl = pending_pr - orderDirection(cmd,OP_SLTP) * sl_pip*Point;
               double tp = pending_pr + orderDirection(cmd,OP_SLTP) * tp_pip*Point;
       
-      if( _OrderModify( res, -1, sl, tp, MN, -1, CLR_NONE))
+      if( ModifyOrder_TPSL_pip( res, tp_pip, sl_pip, MN))
          return(res);   
       else              // заглушка на случай неудачной модификации ордера
          return(res);         
@@ -339,13 +391,29 @@ bool ModifyOrder_TPSL_pip(int ticket, int tp_pip, int sl_pip, int magic){
 		double calc_sl = 0;
 		//---
 		if(OrderType() == OP_BUY || OrderType() == OP_BUYSTOP || OrderType() == OP_BUYLIMIT){
-			calc_tp = (oop + tp_pip*Point);
-			calc_sl = (oop - sl_pip*Point);
+			if(tp_pip > 0)
+				calc_tp = (oop + tp_pip*Point);
+			else
+				calc_tp = 0;
+			//---
+			if(sl_pip > 0)
+				calc_sl = (oop - sl_pip*Point);
+			else
+				calc_sl = 0;
+			//---	
 		}
 		//---
 		if(OrderType() == OP_SELL || OrderType() == OP_SELLSTOP || OrderType() == OP_SELLLIMIT){
-			calc_tp = (oop - tp_pip*Point);
-			calc_sl = (oop + sl_pip*Point);
+			if(tp_pip > 0)
+				calc_tp = (oop - tp_pip*Point);
+			else
+				calc_tp = 0;
+			//---
+			if(sl_pip > 0)
+				calc_sl = (oop + sl_pip*Point);
+			else
+				calc_sl = 0;
+			//---	
 		}
 		//---
 		calc_tp = NormalizeDouble(calc_tp, Digits);
@@ -355,6 +423,34 @@ bool ModifyOrder_TPSL_pip(int ticket, int tp_pip, int sl_pip, int magic){
 			return(true);
 		}else{
 			res = _OrderModify(ticket, -1, calc_sl, calc_tp, magic, -1, CLR_NONE);
+			return(res);
+		}
+		
+}
+//======================================================================
+
+bool ModifyOrder_TPSL_price(int ticket, int tp_pr, int sl_pr, int magic){
+	
+	bool res = false;
+
+	if(!OrderSelect(ticket, SELECT_BY_TICKET)) return(false);
+	//======
+	if(OrderCloseTime() > 0){
+		addInfo("Order: "+ticket+" is CLOSED!!!!");
+		return(false);
+	}
+	//----
+		double oop = NormalizeDouble(OrderOpenPrice(), 	Digits);
+		double otp = NormalizeDouble(OrderTakeProfit(), Digits);
+		double osl = NormalizeDouble(OrderStopLoss(),	Digits);
+		//---
+		tp_pr = NormalizeDouble(tp_pr, Digits);
+		sl_pr = NormalizeDouble(sl_pr, Digits);
+		//---
+		if(tp_pr == otp && sl_pr == osl){
+			return(true);
+		}else{
+			res = _OrderModify(ticket, -1, sl_pr, tp_pr, magic, -1, CLR_NONE);
 			return(res);
 		}
 		
@@ -405,6 +501,8 @@ int _OrderSend(string    _symbol,
    
    если price == 0 тогда открываем по текущей цене
    */
+   
+   
    int res        = -1;
    int countOfTry = 5;
    int nTry       = 0;
@@ -427,14 +525,14 @@ int _OrderSend(string    _symbol,
       if(_price > 0 ){
          if(_cmd == OP_BUYSTOP || _cmd == OP_SELLLIMIT){
             if(_price < (MarketInfo(Symbol(),MODE_ASK) + sltpLevel  *  Point)){
-               logInfo(StringConcatenate("cant open ", "ot = ",_cmd, " op = ",_price," fn = OpenOrder"),libNAME+" : _OrderSend");
+               logInfo(StringConcatenate("cant open ", "ot = ",_cmd, " op = ",_price," fn = ",fn),libNAME+" : _OrderSend");
                return(-1);
             }
          }
          //***
          if(_cmd == OP_SELLSTOP || _cmd == OP_BUYLIMIT){
             if(_price > (MarketInfo(Symbol(),MODE_BID) - sltpLevel  *  Point)){
-              logInfo(StringConcatenate("cant open ", "ot = ",_cmd, " op = ",_price," fn = OpenOrder"),libNAME+" : _OrderSend");
+              logInfo(StringConcatenate("cant open ", "ot = ",_cmd, " op = ",_price," fn = ",fn),libNAME+" : _OrderSend");
                return(-1);
             }
          }
@@ -450,7 +548,7 @@ int _OrderSend(string    _symbol,
       logInfo(StringConcatenate("OpenOrder = ",res), "");
       
       if(res > -1 && (_stoploss > 0 || _takeprofit > 0)){
-         if(_OrderModify(res,-1,_stoploss,_takeprofit,_magic,_exp,CLR_NONE))
+         if(_OrderModify(res,-1,_stoploss,_takeprofit,_magic,_exp,CLR_NONE,"_OrderSend"))
             return(res);   
       }   
       //---
@@ -508,7 +606,8 @@ bool _OrderModify( 	int 		ticket					,
 					double 		takeprofit				, 
 					int 		MN 			= 	0		, 
 					datetime 	expiration	=	-1		, 
-					color 		clr			=	CLR_NONE){
+					color 		clr			=	CLR_NONE,
+					string 		fn			= ""){
    bool res = false;   
    //===================
       if(!checkOrderByTicket(ticket, CHK_SMBMN, "", MN, -1)) return(false);
@@ -546,7 +645,7 @@ bool _OrderModify( 	int 		ticket					,
    if(res)
       return(true);
    else{
-      logError("libOrdersFunc : _OrderModify()","",GetLastError());   
+      logError("libOrdersFunc :"+fn+"() _OrderModify()","",GetLastError());   
       return(res);
    }   
 } 
