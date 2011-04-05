@@ -362,6 +362,7 @@ int OpenPendingPRSLTP_pip(	string		sy		=	""			,
 	---------------------
 	Описание:
 		Модифицирует тп и сл (опционально) ордера
+		если значение тп или сл < 0, тогда будет использоваться соответствующее значение тп или сл ордера
 	---------------------
 	Доп. функции:
 		._OrderModify()
@@ -394,12 +395,18 @@ bool ModifyOrder_TPSL_pip(int ticket, int tp_pip, int sl_pip, int magic){
 			if(tp_pip > 0)
 				calc_tp = (oop + tp_pip*Point);
 			else
-				calc_tp = 0;
+				if(tp_pip < 0)
+					calc_tp = otp;
+				else	
+					calc_tp = 0;
 			//---
 			if(sl_pip > 0)
 				calc_sl = (oop - sl_pip*Point);
 			else
-				calc_sl = 0;
+				if(sl_pip < 0)
+					calc_sl = osl;
+				else
+					calc_sl = 0;
 			//---	
 		}
 		//---
@@ -407,12 +414,18 @@ bool ModifyOrder_TPSL_pip(int ticket, int tp_pip, int sl_pip, int magic){
 			if(tp_pip > 0)
 				calc_tp = (oop - tp_pip*Point);
 			else
-				calc_tp = 0;
+				if(tp_pip < 0)
+					calc_tp = otp;
+				else	
+					calc_tp = 0;
 			//---
 			if(sl_pip > 0)
 				calc_sl = (oop + sl_pip*Point);
 			else
-				calc_sl = 0;
+				if(sl_pip < 0)
+					calc_sl = osl;
+				else	
+					calc_sl = 0;
 			//---	
 		}
 		//---
@@ -428,11 +441,11 @@ bool ModifyOrder_TPSL_pip(int ticket, int tp_pip, int sl_pip, int magic){
 		
 }
 //======================================================================
-
-bool ModifyOrder_TPSL_price(int ticket, int tp_pr, int sl_pr, int magic){
+// если значение тп или сл < 0, тогда будет использоваться соответствующее значение тп или сл ордера
+bool ModifyOrder_TPSL_price(int ticket, double tp_pr, double sl_pr, int magic){
 	
 	bool res = false;
-
+    //Print("ModifyOrder_TPSL_price("+ticket+", "+tp_pr+","+ sl_pr+", "+magic+")");
 	if(!OrderSelect(ticket, SELECT_BY_TICKET)) return(false);
 	//======
 	if(OrderCloseTime() > 0){
@@ -446,6 +459,12 @@ bool ModifyOrder_TPSL_price(int ticket, int tp_pr, int sl_pr, int magic){
 		//---
 		tp_pr = NormalizeDouble(tp_pr, Digits);
 		sl_pr = NormalizeDouble(sl_pr, Digits);
+		
+		if(tp_pr < 0)
+			tp_pr = otp;
+		//---
+		if(sl_pr < 0)
+			sl_pr = osl;
 		//---
 		if(tp_pr == otp && sl_pr == osl){
 			return(true);
@@ -616,11 +635,15 @@ bool _OrderModify( 	int 		ticket					,
    
    OrderSelect(ticket,SELECT_BY_TICKET);
    
-   if(price       < 0) price       = OrderOpenPrice();
+	double oop	= OrderOpenPrice();
+	double otp	= OrderTakeProfit();
+	double osl	= OrderStopLoss();
+   
+   if(price       < 0) price       = oop;
    //-----
-   if(stoploss    < 0) stoploss    = OrderStopLoss();
+   if(stoploss    < 0) stoploss    = osl;
    //-----
-   if(takeprofit  < 0) takeprofit  = OrderTakeProfit();
+   if(takeprofit  < 0) takeprofit  = otp;
    //-----
    if(expiration  < 0) expiration  = OrderExpiration();
    //-----
@@ -629,6 +652,16 @@ bool _OrderModify( 	int 		ticket					,
       stoploss    = NormalizeDouble(stoploss,   Digits);
       takeprofit  = NormalizeDouble(takeprofit, Digits);      
    //-----
+   //Print("======================================");
+   //Print("otp = ", otp);
+   //Print("takeprofit = ", takeprofit);
+   
+   if(	NormalizeDouble(otp, Digits) == NormalizeDouble(takeprofit, Digits) && 
+		NormalizeDouble(osl, Digits) == NormalizeDouble(stoploss, Digits) && price < 0){
+			return(true);
+	}
+   
+   
    int nTry = 5;
    int i    = 1;
    
@@ -637,7 +670,9 @@ bool _OrderModify( 	int 		ticket					,
       while(IsTradeContextBusy()) Sleep(1000*5);
       //---
       res = OrderModify(ticket, price, stoploss, takeprofit, expiration, clr);   
-      //==========================   
+      //==========================  
+		if(GetLastError() == 1)
+			res = true;
       i++;
    }
    //==========
