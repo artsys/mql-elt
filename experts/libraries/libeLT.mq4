@@ -272,13 +272,15 @@ string getLevelOpenedVol(int parent_ticket, int level, int type, int magic){
     
     int t = OrdersTotal();
     for(int i = t; i >= 0; i--){
-        int      ot     = OrderTicket() ;
-        int      oty    = OrderType()   ;
-        string   ocomm  = OrderComment(); 
-        double   ol     = OrderLots()   ;
         //==============
+			//---
             if(!OrderSelect(i, SELECT_BY_POS, MODE_TRADES)) continue;
             //---
+			int      ot     = OrderTicket() ;
+			int      oty    = OrderType()   ;
+			string   ocomm  = OrderComment(); 
+			double   ol     = OrderLots()   ;
+			//---
             if(!checkOrderByTicket(ot, CHK_MN, "", magic, -1)) continue; // проверим, чтоб ордер был рыночным
             //---
             int olevel = getOrderLevel(ot);

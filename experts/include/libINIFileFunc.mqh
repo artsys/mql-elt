@@ -9,6 +9,7 @@
 #import "libINIFileFunc.ex4"
    string   libINIFile_Ver();
    //---
+   void addRecordInFileOrders(string filename,	string file_comm);
    string returnComment(string comm, string rejim = "");
    //--- Работа с ини файлом
    string   ReadIniString  (string FileName, string SectionName, string KeyName, string   Default   = "-1" );
