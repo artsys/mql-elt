@@ -106,6 +106,35 @@ string returnComment(string comm, string rejim = ""){
       
 }
 
+/*///===================================================================
+	Версия: 2011.04.04
+	---------------------
+	Описание:
+		добавляет описание ордера в файл ордеров
+	---------------------
+	Доп. функции:
+		нет
+	---------------------
+	Переменные:
+		нет
+/*///-------------------------------------------------------------------
+void addRecordInFileOrders(string filename,	string file_comm){
+	int ticket = StrToInteger(returnComment(file_comm,"@ot"));
+	int grid = StrToInteger(returnComment(file_comm,"@g"));
+	int level = StrToInteger(returnComment(file_comm,"@l"));
+	int parent = StrToInteger(returnComment(file_comm,"@p"));
+	int wasType = StrToInteger(returnComment(file_comm,"@w"));
+	int isParent = StrToInteger(returnComment(file_comm,"@ip"));
+	
+	WriteIniString(filename, ticket, "isParent", isParent);
+	WriteIniString(filename, ticket, "grid", grid);
+	WriteIniString(filename, ticket, "level", level);
+	WriteIniString(filename, ticket, "parent", parent);
+	WriteIniString(filename, ticket, "wasType", wasType);
+}
+//======================================================================
+
+
 //+------------------------------------------------------------------+
 //| Параметры:                                                       |
 //|   FileName    - полное имя файла                                 |
