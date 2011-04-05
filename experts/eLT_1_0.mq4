@@ -238,11 +238,11 @@ string logIni(string str_err, string fn=""){
 int getTP(int grid_level, int level){
 
    // проверка на 1-й гридЛевел
-		if(grid_level == 1 && level == 0){
+		if(grid_level <= 1 && level == 0){
 			return(mgp_TP_on_first);
 		}else{
-			if(grid_level == 1 && level > 0){
-				return(mgp_TP + (mgp_TPPlus * level-1));
+			if(grid_level <= 1 && level > 0){
+				return(mgp_TP + (mgp_TPPlus * (level-1)));
 			}
 		}
    //<<<<<<<
@@ -325,7 +325,7 @@ int getTarget(int grid_level, int level){
       arr = aLevels
 
 /*///-------------------------------------------------------------------
-int getMaxMarketLevel(double arr[][][]){
+int getMaxMarketLevel(double& arr[][][]){
    double res = 0;
 		for(int idx_L = 0; idx_L < ArrayRange(arr, 0); idx_L++){
 			for(int idx_oty = 0; idx_oty <= 5; idx_oty++){ // цикл по лимитным и стоповым ордерам
@@ -396,9 +396,7 @@ double calcVolNormalize(double vol, double divide){
 /*///-------------------------------------------------------------------
 int fillLevelOrders(int& arr[], int level, int wt){
 	int res = 0;
-	ArrayResize(arr,1);
-	ArrayInitialize(arr, -1);
-	int dim = ArrayRange(arr, 0);
+	int dim = 0;
 	//---
 		int t = OrdersTotal();
 		for(int i = t; i >= 0; i--){
@@ -517,6 +515,7 @@ void startCheckOrders(){
 					continue;      
 				}	
 			}	
+			
 		//=================
 		// значит наш ордер родитель
 
@@ -557,9 +556,10 @@ void startCheckOrders(){
 			aLevels[0][0][idx_price       ]  = parent_opr;
 			aLevels[0][0][idx_vol         ]  = parent_vol;
 			aLevels[0][0][idx_isMarket    ]  = 1;
-			aLevels[0][0][idx_ParentType  ]  = OrderType();
+			aLevels[0][0][idx_ParentType  ]  = parent_type;
+			aLevels[0][0][idx_ticket      ]  = parent_ticket;
 			
-			Print("maxLevels = ",maxaLevels);
+			//Print("maxLevels = ",maxaLevels);
 
 			for(int idx_L = 1; idx_L < maxaLevels; idx_L++){                     // цикл по уровням. Первый отложенный уровень = 1. 
 				// цикл  по типам ордеров >>>>>>>
@@ -724,17 +724,17 @@ void startCheckOrders(){
 				
 				}//<<<< цикл  по типам ордеров         
 			}
-	}	
+		
 	/*
 	for(idx_L = 0; idx_L <= 3; idx_L++){
 		for(idx_oty = 0; idx_oty < 10; idx_oty++){
-			Print("aLevels[",idx_L,"][",idx_oty,"][idx_price]= ",aLevels[idx_L][idx_oty][idx_price]);
-			Print("aLevels[",idx_L,"][",idx_oty,"][idx_vol]= ",aLevels[idx_L][idx_oty][idx_vol]);
-			Print("aLevels[",idx_L,"][",idx_oty,"][idx_volMarket]= ",aLevels[idx_L][idx_oty][idx_volMarket]);
-			Print("aLevels[",idx_L,"][",idx_oty,"][idx_volPending]= ",aLevels[idx_L][idx_oty][idx_volPending]);
+			//Print("aLevels[",idx_L,"][",idx_oty,"][idx_price]= ",aLevels[idx_L][idx_oty][idx_price]);
+			//Print("aLevels[",idx_L,"][",idx_oty,"][idx_vol]= ",aLevels[idx_L][idx_oty][idx_vol]);
+			//Print("aLevels[",idx_L,"][",idx_oty,"][idx_volMarket]= ",aLevels[idx_L][idx_oty][idx_volMarket]);
+			//Print("aLevels[",idx_L,"][",idx_oty,"][idx_volPending]= ",aLevels[idx_L][idx_oty][idx_volPending]);
 			Print("aLevels[",idx_L,"][",idx_oty,"][idx_isMarket]= ",aLevels[idx_L][idx_oty][idx_isMarket]);
-			Print("aLevels[",idx_L,"][",idx_oty,"][idx_ParentType]= ",aLevels[idx_L][idx_oty][idx_ParentType]);
-			Print("aLevels[",idx_L,"][",idx_oty,"][idx_send]= ",aLevels[idx_L][idx_oty][idx_send]);
+			//Print("aLevels[",idx_L,"][",idx_oty,"][idx_ParentType]= ",aLevels[idx_L][idx_oty][idx_ParentType]);
+			//Print("aLevels[",idx_L,"][",idx_oty,"][idx_send]= ",aLevels[idx_L][idx_oty][idx_send]);
 			Print("=============================================");
 			Sleep(100);
 		}
@@ -747,6 +747,7 @@ void startCheckOrders(){
 	
 	int maxMarketLevel = getMaxMarketLevel(aLevels); // уровни считаются с 0. 0 -родительский
 	
+	//Print("maxMarketLevel = ", maxMarketLevel);
 	//{--- в цикле по уровням проверим тп и сл для ордеров сетки
 		//	продумать алгоритм проверки на тп и сл.
 		//	и возможно, одновременное выставление недостающих ордеров.
@@ -756,11 +757,13 @@ void startCheckOrders(){
 		double	maxMarketLevel_tp = 0;	
 		//{3.1 --- расчитаем ТП для лимитной сетки, если maxMarketLevel > 1
 			if(maxMarketLevel > 0){
-				double	maxlevel_op	=	NormalizeDouble(aLevels[maxMarketLevel-1][OP_LIMLEVEL][idx_price], Digits);
+				double	maxlevel_op	=	NormalizeDouble(aLevels[maxMarketLevel][OP_LIMLEVEL][idx_price], Digits);
 						
-						maxMarketLevel_tp	=	calcPrice(maxlevel_op, parent_type, -getTP(grid_level, maxMarketLevel));
+						maxMarketLevel_tp	=	calcTPPrice(maxlevel_op, parent_type, getTP(grid_level, maxMarketLevel));
+						maxMarketLevel_tp	=	NormalizeDouble(maxMarketLevel_tp, Digits); 
 			}
 		//}
+		
 		//{3.2--- установим тп для родительского ордера
 			if(thisOrderTicket == parent_ticket){
 				// значит родитель живой
@@ -770,9 +773,18 @@ void startCheckOrders(){
 					int sl_pip = 0; // дописать определение стоплосса для родителя
 					//---
 					if(!ModifyOrder_TPSL_pip(thisOrderTicket, tp_pip, sl_pip, MN )){
-						addInfo(" CAN'T Modify order: "+thisOrderTicket);
+						addInfo(" CAN'T Modify parent order: "+thisOrderTicket);
 					}
 				}
+				//{--- 3.2.2 модификация родителя, при сработавшем лимитно-стоповом уровне
+					if(maxMarketLevel > 0){
+						//--- модификация только тп. сл оставляем выставленым изначально
+						if(!ModifyOrder_TPSL_price(thisOrderTicket, maxMarketLevel_tp, -1, MN)){
+							addInfo(" CAN'T Modify parent order: "+thisOrderTicket);
+							Print("maxMarketLevel_tp = ", maxMarketLevel_tp);
+						}
+					}
+				//}
 			}
 		//}	
 		
@@ -780,9 +792,16 @@ void startCheckOrders(){
 			int aLevelOrders[];
 		
 			for(idx_L = 1; idx_L < ArrayRange(aLevels,0); idx_L++){
+				//Print("idx_L = ", idx_L);
+				//Print("ArrayRange(aLevels,0) = ",ArrayRange(aLevels,0));
 				// Дописать: 2011.03.31
 				for(idx_oty = 2; idx_oty < aL_MAXTY; idx_oty++){
 					int	dimLO = fillLevelOrders(aLevelOrders, idx_L, idx_oty); // заполнение массива ордеров тек. уровня
+					//Print("================================================");
+					//Print("======== dimLO = ", dimLO);
+					//for(int j = 0; j < dimLO; j++){
+					//	Print("aLevelOrders["+j+"] = ", aLevelOrders[j]);
+					//}
 					//{--- 3.3.1 обработка тп и сл для лимитных ордеров
 						if(idx_oty == OP_BUYLIMIT || idx_oty == OP_SELLLIMIT){
 							
@@ -796,8 +815,9 @@ void startCheckOrders(){
 										//======
 											if(!OrderSelect(aLevelOrders[idx_ord],SELECT_BY_TICKET)) continue;
 										//======
-										if(!ModifyOrder_TPSL_price(aLevelOrders[idx_ord], maxMarketLevel_tp, sl_pip, MN )){
+										if(!ModifyOrder_TPSL_price(aLevelOrders[idx_ord], maxMarketLevel_tp, -1, MN )){
 											addInfo(" CAN'T Modify order: "+aLevelOrders[idx_ord]);
+											Print("ticket = ", aLevelOrders[idx_ord], "maxMarketLevel_tp = ", maxMarketLevel_tp);
 										}
 									}
 								}
@@ -806,8 +826,11 @@ void startCheckOrders(){
 							//{--- 3.3.1.2 если уровень > maxMarketLevel
 								if(idx_L > maxMarketLevel){
 									tp_pip = getTP(grid_level, idx_L);
-							
+									
 									for(idx_ord = 0; idx_ord < dimLO; idx_ord++){
+										
+										//Print("aLevelOrders["+idx_ord+"] = ",aLevelOrders[idx_ord]);
+										
 										//======
 											if(!OrderSelect(aLevelOrders[idx_ord],SELECT_BY_TICKET)) continue;
 										//======
@@ -877,14 +900,14 @@ void startCheckOrders(){
 						/*///===========================
 						
 						//{--- 3.4.1
-							for(idx_L = 1; idx_L < ArrayRange(aLevels, 0); idx_L++){
+							for(int idx_Le = 1; idx_Le < ArrayRange(aLevels, 0); idx_Le++){
 								for(idx_oty = 2; idx_oty < aL_MAXTY; idx_oty++){
-									int	parent = NormalizeDouble(aLevels[0][0][idx_ticket])
-									int needSend = NormalizeDouble(	aLevels[idx_L][idx_oty][idx_send],0);
-									double	calc_level_vol		=	aLevels[idx_L][idx_oty][idx_vol];
-									double	market_level_vol	=	aLevels[idx_L][idx_oty][idx_volMarket];
-									double	pending_level_vol	=	aLevels[idx_L][idx_oty][idx_volPending];
-									double	pending_level_price	=	aLevels[idx_L][idx_oty][idx_price];
+									int	parent = NormalizeDouble(aLevels[0][0][idx_ticket],0);
+									int needSend = NormalizeDouble(	aLevels[idx_Le][idx_oty][idx_send],0);
+									double	calc_level_vol		=	aLevels[idx_Le][idx_oty][idx_vol];
+									double	market_level_vol	=	aLevels[idx_Le][idx_oty][idx_volMarket];
+									double	pending_level_vol	=	aLevels[idx_Le][idx_oty][idx_volPending];
+									double	pending_level_price	=	aLevels[idx_Le][idx_oty][idx_price];
 									string	pending_comm		=	"@p"+parent+"@l"+idx_L;
 									string	file_comm			=	"";
 									
@@ -937,6 +960,7 @@ void startCheckOrders(){
 			}
 		//}
 	//}
+	}
 	Sleep(1000);
 }
 //======================================================================

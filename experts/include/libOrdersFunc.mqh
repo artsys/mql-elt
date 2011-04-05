@@ -35,4 +35,4 @@
    bool isParentLive(int ticket);
    int getParentInHistory(int ticket);
    bool ModifyOrder_TPSL_pip(int ticket, int tp_pip, int sl_pip, int magic);
-   bool ModifyOrder_TPSL_price(int ticket, int tp_pr, int sl_pr, int magic);
+   bool ModifyOrder_TPSL_price(int ticket, double tp_pr, double sl_pr, int magic);
