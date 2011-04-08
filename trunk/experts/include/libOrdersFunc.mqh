@@ -31,8 +31,10 @@
 							datetime	exp		=	0			, 
 							color		cl		=	CLR_NONE	);
    
-   bool  isParentOrder(int ticket, int magic);
-   bool isParentLive(int ticket);
-   int getParentInHistory(int ticket);
-   bool ModifyOrder_TPSL_pip(int ticket, int tp_pip, int sl_pip, int magic);
-   bool ModifyOrder_TPSL_price(int ticket, double tp_pr, double sl_pr, int magic);
+	bool  isParentOrder(int ticket, int magic);
+	bool isParentLive(int ticket);
+	int getParentInHistory(int ticket);
+	int getParentByTicket(int ticket);
+	int getWasType(int ticket);
+	bool ModifyOrder_TPSL_pip(int ticket, int tp_pip, int sl_pip, int magic);
+	bool ModifyOrder_TPSL_price(int ticket, double tp_pr, double sl_pr, int magic);

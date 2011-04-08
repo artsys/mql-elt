@@ -209,6 +209,63 @@ int getParentInHistory(int ticket){
 //======================================================================
 
 /*///===================================================================
+   Версия: 2011.03.30
+   ---------------------
+   Описание:
+      возвращает родительский тикет для текущего ордера
+   ---------------------
+   Доп. функции:
+      нет
+   ---------------------
+   Переменные:
+      ticket - тикет ордера, для которого определяем родителя
+
+/*///-------------------------------------------------------------------
+int getParentByTicket(int ticket){
+    int res = -1;
+    //---------------
+        if(!OrderSelect(ticket,SELECT_BY_TICKET)) return(-1);
+        //---
+        res = StrToInteger(returnComment(OrderComment(),"@p"));
+        //---
+        if(res == -1){
+            res = StrToInteger(ReadIniString  (file_ord, ticket, "parent", "-1"));
+        }  
+    //---------------
+    return(res);
+    
+}
+//======================================================================
+
+/*///===================================================================
+    Версия: 2011.03.30
+    ---------------------
+    Описание:
+        возвращает, какой тип операции был у 
+        ордера при его выставлении
+    ---------------------
+    Доп. функции:
+        нет
+    ---------------------
+    Переменные:
+        нет
+/*///-------------------------------------------------------------------
+int getWasType(int ticket){
+    int res = -1;
+    //---------------
+    if(!OrderSelect(ticket,SELECT_BY_TICKET)) return(-1);
+    //---
+    res = StrToInteger(returnComment(OrderComment(),"@w"));
+    //---
+    if(res == -1){
+        res = StrToInteger(ReadIniString  (file_ord, ticket, "wasType", "-1"));
+    }  
+    //---------------
+    return(res);    
+}
+//======================================================================
+
+/*///===================================================================
    Версия: 2011.03.24
    ---------------------
    Описание:
@@ -564,7 +621,7 @@ int _OrderSend(string    _symbol,
               
       res = OrderSend(_symbol, _cmd, _volume, _price, _sleepage, 0, 0, _comment, _magic, _exp, CLR_NONE);
       
-      logInfo(StringConcatenate("OpenOrder = ",res), "");
+      logInfo(StringConcatenate("OpenOrder = ",res," sender -> ",fn), libNAME+" : _OrderSend");
       
       if(res > -1 && (_stoploss > 0 || _takeprofit > 0)){
          if(_OrderModify(res,-1,_stoploss,_takeprofit,_magic,_exp,CLR_NONE,"_OrderSend"))
