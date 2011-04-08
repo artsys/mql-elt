@@ -13,7 +13,6 @@
    double  calcPrice(double parent_pr, int parent_type, int pip);
    double  calcTPPrice(double pr, int type, int pip);
    int getOrderLevel(int ticket);
-   int getParentByTicket(int ticket);
    int isMarketLevel(int parent_ticket, int level, int magic);
-   int getWasType(int ticket);
+
    string getLevelOpenedVol(int parent_ticket, int level, int type, int magic);
