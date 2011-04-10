@@ -156,6 +156,39 @@ double  calcTPPrice(double pr, int type, int pip){
 }
 //======================================================================
 
+/*///===================================================================
+   Версия: 2011.04.05
+   ---------------------
+   Описание:
+      возвращает расчетную цену  sl в зависимости от типа ордера,
+      уровня и таргета
+   ---------------------
+   Доп. функции:
+      нет
+   ---------------------
+   Переменные:
+      condition    = логическое сравнение
+      ifTrue       = значение в случае condition = ИСТИНА
+      ifFalse      = значение в случае condition = ЛОЖЬ
+
+/*///-------------------------------------------------------------------
+double  calcSLPrice(double pr, int type, int pip){
+	double calc_pr = -1;
+	// проверка на дурака
+		if(pip < 0) return(-1);
+	//---
+	
+	if(type == OP_BUY || type == OP_BUYSTOP || type == OP_BUYLIMIT){
+		calc_pr	=	NormalizeDouble(pr - pip*Point, Digits);
+	}else{
+		if(type == OP_SELL || type == OP_SELLLIMIT || type == OP_SELLSTOP){
+			calc_pr	=	NormalizeDouble(pr + pip*Point, Digits);
+		}	
+	}
+   
+	return(calc_pr);
+}
+//======================================================================
 
 /*///===================================================================
    Версия: 2011.03.29
@@ -296,5 +329,55 @@ string getLevelOpenedVol(int parent_ticket, int level, int type, int magic){
     //---
     res = StringConcatenate("@vm_",DoubleToStr(vm,2),"@vp_",DoubleToStr(vp,2));
     return(res);    
+}
+//======================================================================
+
+/*///===================================================================
+	Версия: 2011.04.10
+	---------------------
+	Описание:
+		Возвращает тру, если есть хоть один
+		рыночный ордер принадлежащий сетке,
+		проверяемого ордера.
+	---------------------
+	Доп. функции:
+		нет
+	---------------------
+	Переменные:
+		нет
+/*///-------------------------------------------------------------------
+bool isGridLive(int ticket, int MN){
+	bool res = false;
+	//{---
+		if(!OrderSelect(ticket, SELECT_BY_TICKET)) return(false);
+		//---
+		// co - префикс чек ордер = проверяемый ордер	
+		// он же тикет.
+		int		co_t = OrderTicket();
+		string	co_comm = OrderComment();
+		int 	co_pt	= getParentByTicket(co_t);
+		
+		if(isParentOrder(co_t, MN)) return(true);
+		//---
+		if(isParentLive(co_t)) return(true);
+		//---
+		int t = OrdersTotal();
+		for(int thisOrder = 0; thisOrder <= t; thisOrder++){
+			//================
+				if(!OrderSelect(thisOrder, SELECT_BY_POS, MODE_TRADES)) continue;
+				//---
+				int ot	= OrderTicket();
+				int oty	= OrderType();
+				//---
+				if(!checkOrderByTicket(ot, CHK_TYLESS, "", MN, 1)) continue; // значит ордер не рыночный или не с нашим магиком
+				//---
+				int opt = getParentByTicket(ot); // получим тикет родителя для тек. ордера
+				if(opt != co_pt) continue; // родители у тек. ордера и проверяемого ордера - различны.
+			//================
+			res = true; // это рыночный ордер нашей сетки!!!!
+			break;
+		}
+	//}
+	return(res);
 }
 //======================================================================
