@@ -12,7 +12,10 @@
    int    getGrid(int ticket);
    double  calcPrice(double parent_pr, int parent_type, int pip);
    double  calcTPPrice(double pr, int type, int pip);
+   double  calcSLPrice(double pr, int type, int pip);
    int getOrderLevel(int ticket);
    int isMarketLevel(int parent_ticket, int level, int magic);
 
    string getLevelOpenedVol(int parent_ticket, int level, int type, int magic);
+   
+   bool isGridLive(int ticket, int MN);

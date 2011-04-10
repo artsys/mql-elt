@@ -533,6 +533,38 @@ bool ModifyOrder_TPSL_price(int ticket, double tp_pr, double sl_pr, int magic){
 }
 //======================================================================
 
+//+------------------------------------------------------------------+
+//удал€ем отложенник
+//+------------------------------------------------------------------+
+bool delPendingByTicket(int ticket){
+   bool res = false;
+   int  ntry = 0;
+   int tryCount = 5;
+   
+   if(!IsTradeAllowed()) return(false);
+   
+   if(OrderSelect(ticket,SELECT_BY_TICKET)){      //выбрали ордер
+      if(OrderCloseTime() > 0) return(true);     //проверили, чтоб он не был закрыт или удален
+      while(IsTradeContextBusy()){                //пока зан€т торговый поток 
+            Sleep(3000);                          //спим 3 сек.
+      }
+      //---
+      while(!res && ntry <= tryCount){
+         res = OrderDelete(ticket,CLR_NONE);
+         ntry++;
+      }
+      //---
+      int err = GetLastError();
+      if(!res){
+         logError("delPending",StringConcatenate("tick = ",ticket),err);
+      }
+         
+      return(res);
+   }else
+      return(true);
+}
+//=======================================================================
+
 /*///===================================================================
          «ј –џ“џ≈ ‘”Ќ ÷»» Ѕ»ЅЋ»ќ“≈ »		 
 /*///===================================================================   

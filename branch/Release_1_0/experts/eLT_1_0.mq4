@@ -82,9 +82,10 @@ extern         int       mgp_TP_on_first   =     25;    //кол. пунктов для выста
 extern         int       mgp_TP            =     50;    //кол. пунктов для выставления тп на сработавшие ордера сетки. расчет от последнего сработавшего ордера
 extern         int       mgp_TPPlus        =      0;    //увеличение тп от уровня на заданное количество пунктов.
 
-extern         int       mgp_SL_on_first   =      0;    // стоплосс на первый ордер
+int       mgp_SL_on_first   =      0;    // стоплосс на первый ордер (в общем пока уберу за ненадобностью) 
 extern         bool      mgp_needSLToAll   =  false;    // выставлять сл на всю сетку от последнего ордера или отдельно на каждый ордер
-extern         int       mgp_SL            =      0;    // выставляется для каждого
+extern         int       mgp_SL            =      0;    // зависит от <mgp_needSLToAll> размерность: пункты
+extern			int		mgp_SLPlus			=		0;	// Увеличение сл в зависимости от уровня текущей сетки
 
 extern         bool      mgp_useLimOrders  =   true;    // разрешает советнику использовать лимитную сетку
 extern         int          mgp_LimLevels  =      5;    // количество уровней лимитной сетки, включая родительский ордер
@@ -278,6 +279,54 @@ int getTP(int grid_level, int level){
 }
 //======================================================================
 
+/*///===================================================================
+   Версия: 2011.04.01
+   ---------------------
+   Описание:
+      Возвращает текущее значение sl в зависимости 
+      от настроек советника и текущего гридЛевела
+   ---------------------
+   Доп. функции:
+      нет
+   ---------------------
+   Переменные:
+		grid_level	-	уровень вложенности сетки
+
+/*///-------------------------------------------------------------------
+int getSL(int grid_level, int level){
+
+   // проверка на 1-й гридЛевел
+		if(grid_level <= 1 && level == 0){
+			return(mgp_SL);
+		}else{
+			if(grid_level <= 1 && level > 0){
+				return(mgp_SL + (mgp_SLPlus * (level-1)));
+			}
+		}
+   //<<<<<<<
+   // гридЛевел > 1
+      if(grid_level >= 2){
+         //значит у нас сработал стоповый ордер
+         //Алгоритм: 
+            // проверим тп для стоповых будет фикс или коэф
+            // для коэф: тп лим. сетки * гридЛевел
+            //    чтоб получить тп как для родительской сетки, нужно все коэф = 1;
+            // для фикса: возвращаем заданное в настройках значение
+            //---
+            if(SO_useKoefProp){
+				if(level == 0){
+					return(mgp_SL * SO_TP * (grid_level-1));
+				}else{
+					return((mgp_SL + (mgp_SLPlus * (level-1))) * SO_TP * (grid_level-1));
+				}	
+            }else{
+               return(SO_SL);
+            }      
+      }
+   //<<<<<<<
+   
+}
+//======================================================================
 
 /*///===================================================================
    Версия: 2011.03.29
@@ -344,6 +393,28 @@ int getMaxMarketLevel(double& arr[][][]){
    return(res);    
 }
 //======================================================================
+
+/*///===================================================================
+	Версия: 2011.04.08
+	---------------------
+	Описание:
+		Возвращает цену максимального уровня лимитной сетки.
+	---------------------
+	Доп. функции:
+		нет
+	---------------------
+	Переменные:
+		arr[][][] - массив уровней
+/*///-------------------------------------------------------------------
+double getMaxLimitLevelPrice(double& arr[][][], int parent_ticket = -1){
+	double res = -1;
+	//{-----
+		return(NormalizeDouble(arr[mgp_LimLevels-1][OP_LIMLEVEL][idx_price], Digits));
+	//}-----
+	return(res);
+}
+//======================================================================
+
 
 /*///===================================================================
    Версия: 2011.03.29
@@ -438,7 +509,7 @@ int fillLevelOrders(int& arr[], int parent_ticket, int level, int wt){
 
 
 /*///===================================================================
-   Версия: 2011.03.24
+   Версия: 2011.04.08
    ---------------------
    Описание:
       основная процедура советника
@@ -469,6 +540,9 @@ int fillLevelOrders(int& arr[], int parent_ticket, int level, int wt){
                   для определения последнего сработавшего уровня будем использовать 
                   уровень с максимальным индексом
                   у которого есть хоть один рыночный ордер.                                                                   
+   ---------------------
+   Изменения:
+		2011.04.08 - [+] Начал расчеты сл для ордеров уровней.
    ---------------------
    Доп. функции:
       нет
@@ -784,6 +858,38 @@ void startCheckOrders(){
 		//	осталось доставить ордера до расчетного объема.
 		int		grid_level	= NormalizeDouble(aLevels[idx_L][OP_LIMLEVEL][idx_gridLevel],0);
 		double	maxMarketLevel_tp = 0;	
+		
+		//{--- 3.1a расчитаем максимальный уровень лимитной сетки.
+			// расчет будем вести след. образом: 
+			// определяем цену последнего лим. уровня
+			// и в ф-цию расчета цены сл будем подставлять 
+			// либо цену последнего лимитного уровня, либо цену 
+			// тек уровня.
+			double maxLimitLevelPrice = getMaxLimitLevelPrice(aLevels, "-1");
+			
+			//{--- 3.1a.1 определим цену и расстояние в пунктах от родителя до сл
+				parent_opr = NormalizeDouble(aLevels[0][0][idx_price], Digits);
+				
+				double	sl_parent_price	= -1; // цена сл родителя
+				int		sl_parent_pip	= -1; // расстояние от родителя до сл в пунктах
+				
+				//{--- 3.1a.1.1 расчитываем сл для родителя в зависимости от настроек.
+					if(mgp_SL > 0){
+						if(mgp_needSLToAll){
+							sl_parent_price	=	calcSLPrice(maxLimitLevelPrice, parent_type, getSL(grid_level, 0));
+							sl_parent_pip	=	MathAbs((parent_opr - sl_parent_price)/Point);
+						}else{
+							sl_parent_pip	= getSL(grid_level,0);
+						}
+					}else{
+						sl_parent_price = -1;
+						sl_parent_pip = -1;
+					}
+				//}
+				
+			//}
+		//}
+		
 		//{3.1 --- расчитаем ТП для лимитной сетки, если maxMarketLevel > 1
 			if(maxMarketLevel > 0){
 				double	maxlevel_op	=	NormalizeDouble(aLevels[maxMarketLevel][OP_LIMLEVEL][idx_price], Digits);
@@ -799,7 +905,7 @@ void startCheckOrders(){
 				if(maxMarketLevel_tp == 0){
 					// сработавшим уровнем является только уровень родителя
 					int tp_pip = getTP(grid_level, 0);
-					int sl_pip = 0; // дописать определение стоплосса для родителя
+					int sl_pip = sl_parent_pip; // дописать определение стоплосса для родителя
 					//---
 					if(!ModifyOrder_TPSL_pip(thisOrderTicket, tp_pip, sl_pip, MN )){
 						addInfo(" CAN'T Modify parent order: "+thisOrderTicket);
@@ -828,7 +934,24 @@ void startCheckOrders(){
 						if(idx_oty == OP_BUYLIMIT || idx_oty == OP_SELLLIMIT){
 							
 							tp_pip = 0;
-							sl_pip = 0;
+							sl_pip = -1;
+							double sl_price = -1;
+							
+							//{--- 3.3.1.1a расчет сл для лимитного ордера
+								double level_price = aLevels[idx_L][idx_oty][idx_price];
+								if(mgp_SL > 0){
+									if(mgp_needSLToAll){
+										sl_price	=	calcSLPrice(maxLimitLevelPrice, idx_oty, getSL(grid_level, idx_L));
+										sl_pip	=	MathAbs((level_price - sl_price)/Point);
+									}else{
+										sl_pip = getSL(grid_level, idx_L);
+										sl_price = calcSLPrice(level_price, idx_oty, sl_pip);
+									}
+								}else{
+									sl_price = -1;
+									sl_pip = -1;
+								}
+							//}
 							
 							//{--- 3.3.1.1 если уровень <= maxMarketLevel
 								if(idx_L <= maxMarketLevel){
@@ -837,7 +960,7 @@ void startCheckOrders(){
 										//======
 											if(!OrderSelect(aLevelOrders[idx_ord],SELECT_BY_TICKET)) continue;
 										//======
-										if(!ModifyOrder_TPSL_price(aLevelOrders[idx_ord], maxMarketLevel_tp, -1, MN )){
+										if(!ModifyOrder_TPSL_price(aLevelOrders[idx_ord], maxMarketLevel_tp, sl_price, MN )){
 											addInfo(" CAN'T Modify order: "+aLevelOrders[idx_ord]);
 											Print("ticket = ", aLevelOrders[idx_ord], "maxMarketLevel_tp = ", maxMarketLevel_tp);
 										}
@@ -871,6 +994,10 @@ void startCheckOrders(){
 							tp_pip = 0;
 							sl_pip = 0;
 							
+							// в будущем, это у нас родительские ордера, 
+							// по этому будем здесь обрабатывать только отложенные ордера
+							
+							
 							for(idx_ord = 0; idx_ord < dimLO; idx_ord++){
 								int LO_ticket = aLevelOrders[idx_ord];
 								
@@ -881,13 +1008,10 @@ void startCheckOrders(){
 								//======
 								int LO_grid_level = getGrid(LO_ticket);
 								//---
-								Print("LO_ticket = ", LO_ticket);
-								Print("LO_grid_level = ", LO_grid_level);
 								
 								tp_pip = getTP(LO_grid_level, 0);
-								sl_pip = 0;
+								sl_pip = getSL(LO_grid_level, 0); // когда станет родительским, тогда и пересчитаем сл.
 								
-								Print("getTP("+LO_grid_level+",0) = ", tp_pip);
 								//---
 								if(!ModifyOrder_TPSL_pip(LO_ticket, tp_pip, sl_pip, MN )){
 									addInfo(" CAN'T Modify order: "+LO_ticket);
@@ -909,7 +1033,7 @@ void startCheckOrders(){
 								//======
 								//---
 								tp_pip = getTP(1, 0);
-								sl_pip = 0;
+								sl_pip = getSL(1, 0); // когда станет родительским, тогда и обработаем сл.
 								//---
 								if(!ModifyOrder_TPSL_pip(LO_ticket, tp_pip, sl_pip, MN )){
 									addInfo(" CAN'T Modify order: "+LO_ticket);
@@ -992,6 +1116,39 @@ void startCheckOrders(){
 }
 //======================================================================
 
+/*///===================================================================
+	Версия: 2011.04.10
+	---------------------
+	Описание:
+		пробегаемся по рыночным выставленным ордерам
+		и удаляем только отложенные ордера, для которых 
+		нет ни одного рыночного ордера, принадлежащего его (тек. ордера) сетке
+	---------------------
+	Доп. функции:
+		нет
+	---------------------
+	Переменные:
+		нет
+/*///-------------------------------------------------------------------
+void delPendingOrders(){
+	int t = OrdersTotal();
+	for(int thisOrder = 0; thisOrder <= t; thisOrder++){
+		//==========
+			if(!OrderSelect(thisOrder, SELECT_BY_POS, MODE_TRADES)) continue;
+			//---
+			int	ot	= OrderTicket();
+			int oty	= OrderType();
+			//---
+				if(!checkOrderByTicket(ot, CHK_TYMORE, "", MN, 2)) continue;
+				//---
+				if(isGridLive(ot, MN)) continue; // сетка еще живая, значит удалять ордер нет смысла :)
+		//==========
+		// сетка умерла. убъем ордер.
+		delPendingByTicket(ot);
+	}
+}
+//======================================================================
+
 //+------------------------------------------------------------------+
 //| expert initialization function                                   |
 //+------------------------------------------------------------------+
@@ -1029,6 +1186,7 @@ int start(){
       isDone = false;
    //------
    startCheckOrders(); 
+   delPendingOrders();
    //---
 	if(OrdersTotal() == 0 && openFirstOrder){
 		OpenPendingOrders();
