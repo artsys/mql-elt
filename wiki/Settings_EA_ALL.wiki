@@ -36,5 +36,7 @@
 
 ====mgp_SL====
 зависит от [http://code.google.com/p/mql-elt/wiki/Settings_EA_ALL?ts=1302520136&updated=Settings_EA_ALL#mgp_needSLToAll mgp_needSLToAll] размерность: пункты
+
 ====mgp_SLPlus====
+Увеличение сл в зависимости от уровня текущей сетки
 -----
