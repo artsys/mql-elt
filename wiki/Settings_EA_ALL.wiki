@@ -1,5 +1,5 @@
 #labels Settings
-<wiki:toc max_depth="5" />
+<wiki:toc max_depth="7" />
 
 =Базовые настройки=
 
@@ -16,7 +16,7 @@
 ==== mgp_Target ====
     Фиксированное значение таргета (отменяется использованием useAVG_H1 или useAVG_D)
  
-====mgp_!TargetPlus====
+====mgp_TargetPlus====
     увеличение [http://code.google.com/p/mql-elt/wiki/Settings_EA_ALL?ts=1302519212&updated=Settings_EA_ALL#mgp_Target таргета] в зависимости от уровня на [mgp_TargetPlus] пунктов
 -----
 === Настройки тейкпрофита ===
@@ -44,7 +44,7 @@
 ====mgp_useLimOrders====
     _*true/false*_ - разрешает советнику использовать лимитную сетку
 
-====mgp_!LimLevels====
+====mgp_LimLevels====
     количество уровней лимитной сетки, включая родительский ордер
 -----
 === Настройка усреднения ===
@@ -67,4 +67,7 @@
     сколько пунктов от уровня будет выставлен добавочный ордер
 
 ====add_Limit_useLevelVol====
-    *true/false* - разрешает советнику использовать настройку _add_Limit_multiplyVol_ иначе будет использоваться _add_Limit_fixVol_  
+    _*true/false*_ - разрешает советнику использовать настройку _add_Limit_multiplyVol_ иначе будет использоваться _add_Limit_fixVol_
+
+=====add_Limit_multiplyVol=====
+    коэф. умножения объема уровня add_!LimitLevel основной сетки лимитных ордеров
