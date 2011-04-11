@@ -321,9 +321,9 @@ int getSL(int grid_level, int level){
             //---
             if(SO_useKoefProp){
 				if(level == 0){
-					return(mgp_SL * SO_TP * (grid_level-1));
+					return(mgp_SL * SO_SL * (grid_level-1));
 				}else{
-					return((mgp_SL + (mgp_SLPlus * (level-1))) * SO_TP * (grid_level-1));
+					return((mgp_SL + (mgp_SLPlus * (level-1))) * SO_SL * (grid_level-1));
 				}	
             }else{
                return(SO_SL);
@@ -352,8 +352,8 @@ int getSL(int grid_level, int level){
 /*///-------------------------------------------------------------------
 int getTarget(int grid_level, int level){
    // проверка на 1-й гридЛевел
-      if(grid_level == 1){
-         return(mgp_Target * level);
+      if(grid_level <= 1){
+         return(mgp_Target * level + (mgp_TargetPlus*level-1));
       }
    //<<<<<<<
    // гридЛевел > 1
@@ -366,9 +366,9 @@ int getTarget(int grid_level, int level){
             // для фикса: возвращаем заданное в настройках значение
             //---
             if(SO_useKoefProp){
-               return(mgp_Target * SO_Target * grid_level);
+               return((mgp_Target * level + (mgp_TargetPlus*level-1)) * SO_Target * (grid_level-1));
             }else{
-               return(SO_Target);
+               return(SO_Target*(level));
             }      
       }
    //<<<<<<<
