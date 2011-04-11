@@ -1,8 +1,14 @@
 //+------------------------------------------------------------------+
 //|                                                          eLT.mq4 |
+//|                                                        ver 1.0.56|
 //|                                         программирование artamir |
 //|                                                artamir@yandex.ru |
-//+------------------------------------------------------------------+ 
+//+------------------------------------------------------------------+
+
+/*///===================================================================
+	Багфиксы :
+		3
+/*///=================================================================== 
 
 #property copyright "copyright (c) 2008-2011, Morochin <artamir> Artiom"
 #property link      "http://forexmd.ucoz.org, mailto: artamir@yandex.ru"
@@ -76,7 +82,7 @@ extern         double    TWISE_LOTS        =     20;     // деление ордеров при 
 extern         int       MN                =     0;      // магик с которым будет работать советник. чужие магики обрабатываться не будут 
 extern string MGP       = "===== MAIN GRID PROP >>>>>>>>>>>>>>>>>";
 extern         int       mgp_Target        =     25;    //Фиксированное значение таргета (отменяется использованием useAVG_H1 или useAVG_D)
-extern         int       mgp_TargetPlus    =      0;    //увеличение таргета в зависимости от уровня на TargetPlus пунктов
+extern         int       mgp_TargetPlus    =      0;    //увеличение таргета в зависимости от уровня на mgp_TargetPlus пунктов
 
 extern         int       mgp_TP_on_first   =     25;    //кол. пунктов для выставления тп на родительский ордер, когда нет сработавших дочерних ордеров
 extern         int       mgp_TP            =     50;    //кол. пунктов для выставления тп на сработавшие ордера сетки. расчет от последнего сработавшего ордера
@@ -360,9 +366,9 @@ int getTarget(int grid_level, int level){
             // для фикса: возвращаем заданное в настройках значение
             //---
             if(SO_useKoefProp){
-               return(mgp_Target * SO_Target * level * grid_level);
+               return(mgp_Target * SO_Target * grid_level);
             }else{
-               return(SO_Target * level * grid_level);
+               return(SO_Target);
             }      
       }
    //<<<<<<<
