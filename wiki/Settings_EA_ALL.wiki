@@ -15,7 +15,7 @@
 Фиксированное значение таргета (отменяется использованием useAVG_H1 или useAVG_D)
  
 ===mgp_TargetPlus===
-увеличение [mgp_Target таргета] в зависимости от уровня на mgp_TargetPlus пунктов
+увеличение [http://code.google.com/p/mql-elt/wiki/Settings_EA_ALL?ts=1302519212&updated=Settings_EA_ALL#mgp_Target таргета] в зависимости от уровня на mgp_TargetPlus пунктов
 
 ===mgp_TP_on_first=== 
 
