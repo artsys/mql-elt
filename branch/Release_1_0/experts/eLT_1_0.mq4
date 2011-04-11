@@ -36,7 +36,7 @@
 #define		CHK_TYLESS			300
 #define		CHK_TYEQ			200
 
-#define		EXP_NAME			"eLT 10.x"
+#define		EXP_NAME			"eLT_10"
 
 #define  TL_COUNT		1	// TL - Twise lot
 #define  TL_VOL			2	// TL - Twise lot
@@ -1165,8 +1165,9 @@ int init(){
 		SPREAD = MarketInfo(Symbol(),	MODE_SPREAD);
 		//---
 		INIFile_name   = StringConcatenate(EXP_NAME,"_",AccountNumber(),"_",Symbol(),"_",MN);
-		INIFile_folder = StringConcatenate(TerminalPath(),"/experts/files/",EXP_NAME);
-		INIFile_ord    = StringConcatenate(INIFile_folder,INIFile_ord,".ord");
+		INIFile_folder = TerminalPath()+"\\experts\\files\\";
+		INIFile_ord    = StringConcatenate(INIFile_folder,INIFile_name,".ord");
+		Print(INIFile_ord);
 		//---
 		initLibs(); // инициализируем библиотеки   
 //----

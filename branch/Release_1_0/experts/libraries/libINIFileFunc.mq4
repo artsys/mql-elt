@@ -126,11 +126,14 @@ void addRecordInFileOrders(string filename,	string file_comm){
 	int wasType = StrToInteger(returnComment(file_comm,"@w"));
 	int isParent = StrToInteger(returnComment(file_comm,"@ip"));
 	
-	WriteIniString(filename, ticket, "isParent", isParent);
+	int x = WriteIniString(filename, ticket, "isParent", isParent);
+	Print("x = ",x);
 	WriteIniString(filename, ticket, "grid", grid);
 	WriteIniString(filename, ticket, "level", level);
 	WriteIniString(filename, ticket, "parent", parent);
 	WriteIniString(filename, ticket, "wasType", wasType);
+	
+	Print(filename);
 }
 //======================================================================
 
@@ -357,11 +360,12 @@ void WriteIniInteger(string FileName, string SectionName, string KeyName,
 //|   KeyName     - наименование параметра                           |
 //|   sParam      - записываемое значение параметра                  |
 //+------------------------------------------------------------------+
-void WriteIniString(string FileName, string SectionName, string KeyName, 
+int WriteIniString(string FileName, string SectionName, string KeyName, 
                     string sParam)
   {
    int nValue = WritePrivateProfileStringA(SectionName, KeyName, sParam, 
                                            FileName);
+	return(nValue);									   
   }
 //+------------------------------------------------------------------+
 
