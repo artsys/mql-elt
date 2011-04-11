@@ -55,19 +55,19 @@
 ====mgp_multiplyVol====
     увеличение объема след. уровня в _mgp_multiplyVol_ раз   {{{(*)}}}
 -----
-=== Настройка добавочного ордера ===
+== Настройка добавочного ордера ==
 
-====add_useAddLimit====
+===add_useAddLimit===
     _*true/false*_ - разрешает советнику выставлять добавочный лимитный ордер как родительский
 
-====add_!LimitLevel====
+===add_!LimitLevel===
     уровень сетки, от которого будет произведен расчет цены добавочного ордера
 
-====add_!Limit_Pip====
+===add_!Limit_Pip===
     сколько пунктов от уровня будет выставлен добавочный ордер
 
-====add_Limit_useLevelVol====
+===add_Limit_useLevelVol===
     _*true/false*_ - разрешает советнику использовать настройку _add_Limit_multiplyVol_ иначе будет использоваться _add_Limit_fixVol_
 
-=====add_Limit_multiplyVol=====
+====add_Limit_multiplyVol====
     коэф. умножения объема уровня add_!LimitLevel основной сетки лимитных ордеров
