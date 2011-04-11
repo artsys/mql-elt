@@ -234,7 +234,7 @@ int getOrderLevel(int ticket){
       нет
 
 /*///-------------------------------------------------------------------
-int isMarketLevel(int parent_ticket, int level, int magic){
+int isMarketLevel(int parent_ticket, int level, int magic, string sy = ""){
 
    int res = -1;
    
@@ -246,7 +246,7 @@ int isMarketLevel(int parent_ticket, int level, int magic){
          //==============
             if(!OrderSelect(i, SELECT_BY_POS, MODE_TRADES)) continue;
             //---
-            if(!checkOrderByTicket(ot, CHK_TYLESS, "", magic, 1)) continue; // проверим, чтоб ордер был рыночным
+            if(!checkOrderByTicket(ot, CHK_TYLESS, sy, magic, 1)) continue; // проверим, чтоб ордер был рыночным
             //---
             int olevel = getOrderLevel(ot);
             //---
@@ -276,7 +276,7 @@ int isMarketLevel(int parent_ticket, int level, int magic){
       нет
 
 /*///-------------------------------------------------------------------
-string getLevelOpenedVol(int parent_ticket, int level, int type, int magic){
+string getLevelOpenedVol(int parent_ticket, int level, int type, int magic, string sy = ""){
     string res = "";
 
     double vm = 0;      // объем рыночных ордеров

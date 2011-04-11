@@ -31,7 +31,7 @@
 							datetime	exp		=	0			, 
 							color		cl		=	CLR_NONE	);
    
-	bool  isParentOrder(int ticket, int magic);
+	bool  isParentOrder(int ticket, int magic, string sy = "");
 	bool isParentLive(int ticket);
 	int getParentInHistory(int ticket);
 	int getParentByTicket(int ticket);

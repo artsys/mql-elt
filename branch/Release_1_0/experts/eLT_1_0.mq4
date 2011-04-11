@@ -1,13 +1,13 @@
 //+------------------------------------------------------------------+
 //|                                                          eLT.mq4 |
-//|                                                        ver 1.0.56|
+//|                                                    ver 1.0.6.0411|
 //|                                         программирование artamir |
 //|                                                artamir@yandex.ru |
 //+------------------------------------------------------------------+
 
 /*///===================================================================
 	Ѕагфиксы :
-		3
+		3,4,5
 /*///=================================================================== 
 
 #property copyright "copyright (c) 2008-2011, Morochin <artamir> Artiom"
@@ -492,7 +492,7 @@ int fillLevelOrders(int& arr[], int parent_ticket, int level, int wt){
 				int oty = OrderType();
 				int om = OrderMagicNumber();
 				//---
-				if(!checkOrderByTicket(ot, CHK_MN, "", MN, -1)) continue; // проверим, чтоб ордер был рыночным
+				if(!checkOrderByTicket(ot, CHK_MN, Symbol(), MN, -1)) continue; // проверим, чтоб ордер был рыночным
 				//---
 				int olevel = getOrderLevel(ot);
 				if(olevel != level) continue;
@@ -577,7 +577,9 @@ void startCheckOrders(){
 			//------   
 			if(parent_grid <= 1) parent_grid = 1;
 			//------
-			if(!isParentOrder(parent_ticket, MN)) {
+			if(!checkOrderByTicket(parent_ticket, CHK_MN, Symbol(), MN, -1)) continue; // проверим, чтоб ордер был рыночным)
+			//------
+			if(!isParentOrder(parent_ticket, MN, Symbol())) {
 				// если это рыночный ордер, то проверим, живой ли родитель.
 				// если родител€ нет, то в истории ищем родител€ и 
 				// перенастраиваем родительские переменные
@@ -688,11 +690,11 @@ void startCheckOrders(){
 																				//-----					
 								aLevels	[idx_L]	[idx_oty]	[idx_vol       	]	=	calcLimitVol(	parent_vol,	idx_L);
 																				//-----				
-								aLevels	[idx_L]	[idx_oty]	[idx_isMarket  	]	=	isMarketLevel(	parent_ticket,	idx_L,	MN);
+								aLevels	[idx_L]	[idx_oty]	[idx_isMarket  	]	=	isMarketLevel(	parent_ticket,	idx_L,	MN, Symbol());
 																				//------				
 								aLevels	[idx_L]	[idx_oty]	[idx_ParentType	]	=	parent_type;
 								//---
-								string sVolLevel = getLevelOpenedVol(	parent_ticket,	idx_L,	idx_oty,	MN); // возвращает результат в виде "@vm1.6@vp3.2" vm - объем рыночных, vp - отложенных
+								string sVolLevel = getLevelOpenedVol(	parent_ticket,	idx_L,	idx_oty,	MN, Symbol()); // возвращает результат в виде "@vm1.6@vp3.2" vm - объем рыночных, vp - отложенных
 								//---
 								aLevels	[idx_L]	[idx_oty]	[idx_volMarket 	]	=	StrToDouble(	returnComment(sVolLevel	, "@vm_")	);
 																				//------								
@@ -748,7 +750,7 @@ void startCheckOrders(){
 										//}
 										aLevels[idx_L][idx_oty][idx_vol		]	= calcVolNormalize(	volToCalc,	
 																								SO_LimLevelVol_Divide);
-										sVolLevel	=	getLevelOpenedVol(parent_ticket, idx_L, idx_oty, MN);
+										sVolLevel	=	getLevelOpenedVol(parent_ticket, idx_L, idx_oty, MN, Symbol());
 										//---
 										aLevels[idx_L][idx_oty][idx_volMarket ] = StrToDouble(	returnComment(sVolLevel,"@vm_")	);
 										aLevels[idx_L][idx_oty][idx_volPending] = StrToDouble(	returnComment(sVolLevel,"@vp_")	);
@@ -766,7 +768,7 @@ void startCheckOrders(){
 											//}
 											aLevels[idx_L][idx_oty][idx_vol		]	= calcVolNormalize(	volToCalc,	
 																								SO_ContLevelVol_Divide);
-											sVolLevel	=	getLevelOpenedVol(parent_ticket, idx_L, idx_oty, MN);
+											sVolLevel	=	getLevelOpenedVol(parent_ticket, idx_L, idx_oty, MN, Symbol());
 											//---
 											aLevels[idx_L][idx_oty][idx_volMarket ] = StrToDouble(	returnComment(sVolLevel,"@vm_")	);
 											aLevels[idx_L][idx_oty][idx_volPending] = StrToDouble(	returnComment(sVolLevel,"@vp_")	);
@@ -822,7 +824,7 @@ void startCheckOrders(){
 								
 									aLevels[idx_L][idx_oty][idx_vol]	=	calcVolNormalize(volToCalc, add_mult);
 								
-									sVolLevel	=	getLevelOpenedVol(parent_ticket, idx_L, idx_oty, MN);
+									sVolLevel	=	getLevelOpenedVol(parent_ticket, idx_L, idx_oty, MN, Symbol());
 									//---
 									aLevels[idx_L][idx_oty][idx_volMarket ] = StrToDouble(	returnComment(sVolLevel,"@vm_")	);
 									aLevels[idx_L][idx_oty][idx_volPending] = StrToDouble(	returnComment(sVolLevel,"@vp_")	);
@@ -837,7 +839,7 @@ void startCheckOrders(){
 	/*
 	for(idx_L = 0; idx_L <= 3; idx_L++){
 		for(idx_oty = 0; idx_oty < 10; idx_oty++){
-			//Print("aLevels[",idx_L,"][",idx_oty,"][idx_price]= ",aLevels[idx_L][idx_oty][idx_price]);
+			Print("aLevels[",idx_L,"][",idx_oty,"][idx_price]= ",aLevels[idx_L][idx_oty][idx_price]);
 			//Print("aLevels[",idx_L,"][",idx_oty,"][idx_vol]= ",aLevels[idx_L][idx_oty][idx_vol]);
 			//Print("aLevels[",idx_L,"][",idx_oty,"][idx_volMarket]= ",aLevels[idx_L][idx_oty][idx_volMarket]);
 			//Print("aLevels[",idx_L,"][",idx_oty,"][idx_volPending]= ",aLevels[idx_L][idx_oty][idx_volPending]);
@@ -1060,7 +1062,7 @@ void startCheckOrders(){
 						/*///===========================
 						
 						//{--- 3.4.1
-							sVolLevel = getLevelOpenedVol(	parent_ticket,	idx_L,	idx_oty,	MN);
+							sVolLevel = getLevelOpenedVol(	parent_ticket,	idx_L,	idx_oty,	MN, Symbol());
 							int	parent = NormalizeDouble(aLevels[0][0][idx_ticket],0);
 							int needSend = NormalizeDouble(	aLevels[idx_L][idx_oty][idx_send],0);
 							double	calc_level_vol		=	aLevels[idx_L][idx_oty][idx_vol];
@@ -1102,7 +1104,7 @@ void startCheckOrders(){
 								double send_vol = TwisePending(needSendVol, used_send_vol, TL_VOL, TWISE_LOTS);
 								used_send_vol = used_send_vol + send_vol;
 								//{--- 
-									int	res	=	OpenPendingPRSLTP_pip(	"", cmd, send_vol, pending_level_price, sl_pip, tp_pip, pending_comm, MN, 0, CLR_NONE);
+									int	res	=	OpenPendingPRSLTP_pip(	Symbol(), cmd, send_vol, pending_level_price, sl_pip, tp_pip, pending_comm, MN, 0, CLR_NONE);
 									if(	res == -1 ){
 										addInfo("CAN'T send order at level:"+idx_L+" type: "+cmd+" pr = "+pending_level_price);
 									}else{
@@ -1145,7 +1147,7 @@ void delPendingOrders(){
 			int	ot	= OrderTicket();
 			int oty	= OrderType();
 			//---
-				if(!checkOrderByTicket(ot, CHK_TYMORE, "", MN, 2)) continue;
+				if(!checkOrderByTicket(ot, CHK_TYMORE, Symbol(), MN, 2)) continue;
 				//---
 				if(isGridLive(ot, MN)) continue; // сетка еще жива€, значит удал€ть ордер нет смысла :)
 		//==========

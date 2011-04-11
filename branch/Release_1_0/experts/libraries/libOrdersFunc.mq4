@@ -110,10 +110,14 @@ double TwisePending(double nlot,double ulot,int rejim, double TL)
    ѕеременные:
       ticket       = тикет провер€емого ордера
       magic        = магик советника
+	  sy			= —имвол ордера
 /*///-------------------------------------------------------------------
-bool  isParentOrder(int ticket, int magic){
+bool  isParentOrder(int ticket, int magic, string sy = ""){
    //================
-      if(!checkOrderByTicket(ticket, CHK_TYLESS, "", magic, 1)) return(false); // проверим, чтоб ордер был рыночным
+		if(sy == "")
+			sy = NULL;
+	
+      if(!checkOrderByTicket(ticket, CHK_TYLESS, sy, magic, 1)) return(false); // проверим, чтоб ордер был рыночным
       //----
       if(!OrderSelect(ticket, SELECT_BY_TICKET)) return(false); //на вс€кий случай
    //================
@@ -715,10 +719,11 @@ bool _OrderModify( 	int 		ticket					,
 					int 		MN 			= 	0		, 
 					datetime 	expiration	=	-1		, 
 					color 		clr			=	CLR_NONE,
+					string		sy			= "",
 					string 		fn			= ""){
    bool res = false;   
    //===================
-      if(!checkOrderByTicket(ticket, CHK_SMBMN, "", MN, -1)) return(false);
+      if(!checkOrderByTicket(ticket, CHK_SMBMN, sy, MN, -1)) return(false);
    //===================   
    // ѕроверка на возможность работы советника
    
