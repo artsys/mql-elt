@@ -35,6 +35,6 @@
 выставлять сл на всю сетку от последнего ордера или отдельно на каждый ордер
 
 ====mgp_SL====
-зависит от mgp_needSLToAll размерность: пункты
+зависит от [http://code.google.com/p/mql-elt/w/edit.do#mgp_needSLToAll mgp_needSLToAll] размерность: пункты
 ====mgp_SLPlus====
 -----
