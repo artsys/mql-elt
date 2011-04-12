@@ -67,22 +67,22 @@
 
 _*Соглашение:* сетка для добавочного ордера расчитывается из настроек *настроек лимитной сетки*_ 
 
-    {{{add_useAddLimit = }}}_*true/false*_
+    #{{{add_useAddLimit = }}}_*true/false*_
     - разрешает советнику выставлять добавочный лимитный ордер как родительский
 
-        {{{add_LimitLevel}}}
+        #{{{add_LimitLevel}}}
         уровень сетки, от которого будет произведен расчет цены добавочного ордера
 
-        {{{add_Limit_Pip}}}
+        #{{{add_Limit_Pip}}}
         сколько пунктов от уровня будет выставлен добавочный ордер
 
-        {{{add_Limit_useLevelVol = }}}_*true/false*_ 
+        #{{{add_Limit_useLevelVol = }}}_*true/false*_ 
         - разрешает советнику использовать настройку _add_Limit_multiplyVol_ иначе будет использоваться _add_Limit_fixVol_
 
-            {{{add_Limit_multiplyVol}}}
+            #{{{add_Limit_multiplyVol}}}
             коэф. умножения объема уровня add_LimitLevel основной сетки лимитных ордеров
   
-            {{{add_Limit_fixVol}}}
+            #{{{add_Limit_fixVol}}}
             фиксированный объем добавочного ордера
 -----
 
