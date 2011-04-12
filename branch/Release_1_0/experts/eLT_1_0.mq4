@@ -10,6 +10,7 @@
 		3,4,5,
 		[6] - ошибка создания ини файла ордеров.
 		[7] - ошибка компиляции библиотеки libELT.mq4
+		[9] - Добавление добавочного стопового ордера.
 /*///=================================================================== 
 
 #property copyright "copyright (c) 2008-2011, Morochin <artamir> Artiom"
@@ -102,7 +103,7 @@ extern         double    mgp_plusVol       =    0.0;    // увеличение объема сле
 extern         double    mgp_multiplyVol   =      2;    // увеличение объема след. уровня в <mgp_multiplyVol> раз   (*)
 
 
-extern string ADD_DESC  = "=========== Adding lim. order as parent";
+extern string ADD_LIMDESC  = "=========== Adding lim. order as parent";
 extern         bool       add_useAddLimit          =	false		;	// разрешает советнику выставлять добавочный лимитный ордер как родительский
 extern         int        	add_LimitLevel              =	3		;	// уровень сетки, от которого будет произведен расчет цены добавочного ордера
 extern         int        	add_Limit_Pip               =	15		;	// сколько пунктов от уровня будет выставлен добавочный ордер
@@ -111,6 +112,15 @@ extern         double     		add_Limit_multiplyVol       =	1	;	// коэф. умножения
 extern         double     		add_Limit_fixVol            = 0.1	;	// фиксированный объем добавочного ордера
 																		// Соглашение: сетка для добавочного ордера расчитывается из настроек <mgp_> 
 
+extern string ADD_STOPDESC  = "=========== Adding stop order as parent";
+extern         bool       add_useAddStop          =	false		;	// разрешает советнику выставлять добавочный стоповый ордер как родительский
+extern         int        	add_StopLevel              =	3		;	// уровень сетки, от которого будет произведен расчет цены добавочного ордера. Родительский ордер находится на 1-м уровне 
+extern         int        	add_Stop_Pip               =	15		;	// сколько пунктов от уровня будет выставлен добавочный ордер
+extern         bool       	add_Stop_useLevelVol    =	true		;	// разрешает советнику использовать настройку <add_Stop_multiplyVol> иначе будет использоваться <add_Stop_fixVol>  
+extern         double     		add_Stop_multiplyVol       =	1	;	// коэф. умножения объема уровня <add_StopLevel> основной сетки лимитных ордеров
+extern         double     		add_Stop_fixVol            = 0.1	;	// фиксированный объем добавочного ордера
+																		// Соглашение: сетка для добавочного ордера расчитывается из настроек <mgp_> 																		
+																		
 extern   string AL_DESC = "=========== AUTO_LOT SETUP ==========";
 extern         double     al_LOT_fix           =    0.1;         // фиксированный стартовый лот
 extern            bool    al_needAutoLots      =  false;         // разрешает авторасчет объема родительского ордера
@@ -785,7 +795,7 @@ void startCheckOrders(){
 							}
 						}//}<<<< обработка стоповых ордеров
 					
-					//{ обработка добавочных ордеров
+					//{ обработка добавочных лимитных ордеров
 						if(idx_oty == OP_ADD_BUYLIMIT || idx_oty == OP_ADD_SELLLIMIT){
 							if(add_useAddLimit){
 								if(idx_L == add_LimitLevel-1){
@@ -820,6 +830,56 @@ void startCheckOrders(){
 											add_mult	=	add_Limit_multiplyVol;
 										}else{
 											volToCalc	=	add_Limit_fixVol;
+											add_mult	=	1;
+										}
+									//}
+								
+									aLevels[idx_L][idx_oty][idx_vol]	=	calcVolNormalize(volToCalc, add_mult);
+								
+									sVolLevel	=	getLevelOpenedVol(parent_ticket, idx_L, idx_oty, MN, Symbol());
+									//---
+									aLevels[idx_L][idx_oty][idx_volMarket ] = StrToDouble(	returnComment(sVolLevel,"@vm_")	);
+									aLevels[idx_L][idx_oty][idx_volPending] = StrToDouble(	returnComment(sVolLevel,"@vp_")	);
+								}
+							}
+						}
+					//}
+					
+					//{ обработка добавочных стоповых ордеров
+						if(idx_oty == OP_ADD_BUYSTOP || idx_oty == OP_ADD_SELLSTOP){
+							if(add_useAddStop){
+								if(idx_L == add_StopLevel-1){
+									//{ проверим правильный тип добавочного ордера
+										if(parent_type == OP_BUY && idx_oty != OP_ADD_SELLSTOP){
+											aLevels[idx_L][idx_oty][idx_send] = -1.00;
+											continue;
+										}
+									//---
+										if(parent_type == OP_SELL && idx_oty != OP_ADD_BUYSTOP){
+											aLevels[idx_L][idx_oty][idx_send] = -1.00;
+											continue;
+										}
+									//}	
+								
+									//{--- определяем коэф. 1/-1 для спреда
+										oD	=	1; // для байстопа (цена лимитного ордера + кол. пунктов)
+										//---
+										if(idx_oty == OP_ADD_SELLSTOP)	oD	=	-1;
+									//}---
+								
+									aLevels[idx_L][idx_oty][idx_send]	=	1.00;
+									aLevels[idx_L][idx_oty][idx_price]	=	aLevels[idx_L][OP_LIMLEVEL][idx_price]	+
+																			add_Stop_Pip*Point*oD;
+																			//---
+									//{--- определяем объем добавочного ордера
+										volToCalc = 0;
+										add_mult = 1;
+										//---
+										if(add_Stop_useLevelVol){
+											volToCalc	=	aLevels[idx_L][OP_LIMLEVEL][idx_vol];
+											add_mult	=	add_Stop_multiplyVol;
+										}else{
+											volToCalc	=	add_Stop_fixVol;
 											add_mult	=	1;
 										}
 									//}
@@ -1032,6 +1092,28 @@ void startCheckOrders(){
 					
 					//{--- 3.3.3 обработка добавочных ордеров
 						if(idx_oty == OP_ADD_BUYLIMIT || idx_oty == OP_ADD_SELLLIMIT){
+							tp_pip = 0;
+							sl_pip = 0;
+							
+							for(idx_ord = 0; idx_ord < dimLO; idx_ord++){
+								LO_ticket = aLevelOrders[idx_ord];
+								
+								//======
+									if(!OrderSelect(LO_ticket, SELECT_BY_TICKET)) continue;
+								//======
+								//---
+								tp_pip = getTP(1, 0);
+								sl_pip = getSL(1, 0); // когда станет родительским, тогда и обработаем сл.
+								//---
+								if(!ModifyOrder_TPSL_pip(LO_ticket, tp_pip, sl_pip, MN )){
+									addInfo(" CAN'T Modify order: "+LO_ticket);
+								}
+							}
+						}
+					//}
+				
+					//{--- 3.3.4 обработка добавочных стоповых ордеров
+						if(idx_oty == OP_ADD_BUYSTOP || idx_oty == OP_ADD_SELLSTOP){
 							tp_pip = 0;
 							sl_pip = 0;
 							
