@@ -357,7 +357,7 @@ bool isGridLive(int ticket, int MN){
 		string	co_comm = OrderComment();
 		int 	co_pt	= getParentByTicket(co_t);
 		
-		if(isParentOrder(co_t, MN)) return(true);
+		if(isParentOrder(co_t, MN, Symbol())) return(true);
 		//---
 		if(isParentLive(co_t)) return(true);
 		//---
