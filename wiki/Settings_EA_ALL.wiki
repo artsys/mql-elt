@@ -1,6 +1,6 @@
 #labels Settings
 <wiki:toc max_depth="7" />
-#sidebar Settings_EA_ALL
+
 ----
 =Базовые настройки=
 
