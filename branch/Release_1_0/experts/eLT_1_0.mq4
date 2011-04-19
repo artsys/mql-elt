@@ -1,6 +1,6 @@
 //+------------------------------------------------------------------+
 //|                                                          eLT.mq4 |
-//|                                                 ver 1.0.6.0412.01|
+//|                                                 ver 1.0.6.0415.23|
 //|                                         программирование artamir |
 //|                                                artamir@yandex.ru |
 //+------------------------------------------------------------------+
@@ -11,6 +11,8 @@
 		[6] - ошибка создания ини файла ордеров.
 		[7] - ошибка компиляции библиотеки libELT.mq4
 		[9] - Добавление добавочного стопового ордера.
+		[12] - ошибка выставления добавочных ордеров.
+		[13] - 
 /*///=================================================================== 
 
 #property copyright "copyright (c) 2008-2011, Morochin <artamir> Artiom"
@@ -149,6 +151,7 @@ extern         bool     SO_useKoefProp			=  true				;	// разрешает советнику исп
 extern         double        SO_Target					=   1.5		;	// в зависимости от <SO_useKoefProp> будет принимать значение <таргета пред. сетки> * SO_Target, либо фикс. 
 																		// значение в пунктах, приведенное к целому числу, для любой дочерней сетки.
 extern         double        SO_TP						=   1.5		;	// описание аналогично пред. настройке
+extern         double        SO_TP_on_first				=   1.5		;	// описание аналогично пред. настройке (расчитывается как гридЛевел-1)
 extern         double        SO_SL						=   1.5		;	// описание аналогично пред. настройке
 extern string SOP_END   = "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<"	;	
 
@@ -248,7 +251,7 @@ string logIni(string str_err, string fn=""){
 //==============================================================
 
 /*///===================================================================
-   Версия: 2011.04.01
+   Версия: 2011.04.19
    ---------------------
    Описание:
       Возвращает текущее значение тп в зависимости 
@@ -284,7 +287,7 @@ int getTP(int grid_level, int level){
             //---
             if(SO_useKoefProp){
 				if(level == 0){
-					return(mgp_TP_on_first * SO_TP * (grid_level-1));
+					return(mgp_TP_on_first + (mgp_TP_on_first * SO_TP_on_first * (grid_level-2));
 				}else{
 					return((mgp_TP + (mgp_TPPlus * (level-1))) * SO_TP * (grid_level-1));
 				}	
@@ -576,7 +579,7 @@ void startCheckOrders(){
 	int t = OrdersTotal();
 	for(int tekOrder = 0; tekOrder <= t; tekOrder++){ // собираем массив aLevels[][][]
 		//=================
-			if(!OrderSelect(tekOrder, SELECT_BY_POS,MODE_TRADES)) continue;
+			if(!OrderSelect(tekOrder, SELECT_BY_POS, MODE_TRADES)) continue;
 			//----
 			int    thisOrderTicket	=	OrderTicket(); 
 			int    parent_ticket	=	OrderTicket();
@@ -618,7 +621,8 @@ void startCheckOrders(){
 					}
 				}else{
 					continue;      
-				}	
+				}
+				Print("PARENT = ", parent_ticket);	
 			}	
 			
 		//=================
@@ -902,12 +906,12 @@ void startCheckOrders(){
 	for(idx_L = 0; idx_L <= 3; idx_L++){
 		for(idx_oty = 0; idx_oty < 10; idx_oty++){
 			Print("aLevels[",idx_L,"][",idx_oty,"][idx_price]= ",aLevels[idx_L][idx_oty][idx_price]);
-			//Print("aLevels[",idx_L,"][",idx_oty,"][idx_vol]= ",aLevels[idx_L][idx_oty][idx_vol]);
-			//Print("aLevels[",idx_L,"][",idx_oty,"][idx_volMarket]= ",aLevels[idx_L][idx_oty][idx_volMarket]);
-			//Print("aLevels[",idx_L,"][",idx_oty,"][idx_volPending]= ",aLevels[idx_L][idx_oty][idx_volPending]);
+			Print("aLevels[",idx_L,"][",idx_oty,"][idx_vol]= ",aLevels[idx_L][idx_oty][idx_vol]);
+			Print("aLevels[",idx_L,"][",idx_oty,"][idx_volMarket]= ",aLevels[idx_L][idx_oty][idx_volMarket]);
+			Print("aLevels[",idx_L,"][",idx_oty,"][idx_volPending]= ",aLevels[idx_L][idx_oty][idx_volPending]);
 			Print("aLevels[",idx_L,"][",idx_oty,"][idx_isMarket]= ",aLevels[idx_L][idx_oty][idx_isMarket]);
-			//Print("aLevels[",idx_L,"][",idx_oty,"][idx_ParentType]= ",aLevels[idx_L][idx_oty][idx_ParentType]);
-			//Print("aLevels[",idx_L,"][",idx_oty,"][idx_send]= ",aLevels[idx_L][idx_oty][idx_send]);
+			Print("aLevels[",idx_L,"][",idx_oty,"][idx_ParentType]= ",aLevels[idx_L][idx_oty][idx_ParentType]);
+			Print("aLevels[",idx_L,"][",idx_oty,"][idx_send]= ",aLevels[idx_L][idx_oty][idx_send]);
 			Print("=============================================");
 			Sleep(100);
 		}
@@ -1177,6 +1181,34 @@ void startCheckOrders(){
 								}
 							//}
 							
+							//{--- 3.4.1.3 расчет тп и сл в пунктах для добавочных лимитных ордеров
+								if(idx_oty == OP_ADD_BUYLIMIT || idx_oty == OP_ADD_SELLLIMIT){
+									tp_pip 	= getTP(1, 0);
+									
+									if(idx_oty == OP_ADD_BUYLIMIT)
+										cmd = OP_BUYLIMIT;
+									//---
+									if(idx_oty == OP_ADD_SELLLIMIT)
+										cmd = OP_SELLLIMIT;
+									//---	
+									pending_comm = pending_comm+"@g"+grid_level+"@w"+idx_oty;
+								}
+							//}
+							
+							//{--- 3.4.1.4 расчет тп и сл в пунктах для добавочных стоповых ордеров
+								if(idx_oty == OP_ADD_BUYSTOP || idx_oty == OP_ADD_SELLSTOP){
+									tp_pip 	= getTP(1, 0);
+									
+									if(idx_oty == OP_ADD_BUYSTOP)
+										cmd = OP_BUYSTOP;
+									//---
+									if(idx_oty == OP_ADD_SELLSTOP)
+										cmd = OP_SELLSTOP;
+									//---	
+									pending_comm = pending_comm+"@g"+grid_level+"@w"+idx_oty;
+								}
+							//}
+							
 							//=====
 								if(needSend == -1) continue;
 							//=====
@@ -1204,7 +1236,7 @@ void startCheckOrders(){
 		//}
 	//}
 	}
-	Sleep(1000);
+	//Sleep(1000);
 }
 //======================================================================
 
@@ -1272,7 +1304,7 @@ int res = 0;
 //{{-----------------------
 int start(){
 	res++;
-	Print("========= START ===== ", res);
+	//Print("========= START ===== ", res);
    if(!isDone) 
       return(0); // если не закончена предыдущая ф-ция start(), тогда выходим
    else
@@ -1286,7 +1318,7 @@ int start(){
 	} 
    //------
    isDone = true;
-   Print("<<<<<, END ", res);
+   //Print("<<<<<, END ", res);
    return(0);
 }
 //========================}} 
@@ -1329,7 +1361,7 @@ double pr = Ask;
       //---
       
       pr = NormalizeDouble(pr,Digits);
-      res = OrderSend(Symbol(),cmd,al_LOT_fix, pr,3,0,0,"First",magicBUY,exp,CLR_NONE);
+      res = OrderSend(Symbol(),cmd,al_LOT_fix, pr,3,0,0,"@ip1@g1",magicBUY,exp,CLR_NONE);
       try++;
    }   
    
@@ -1352,7 +1384,7 @@ double pr = Ask;
       }
       //---
       pr = NormalizeDouble(pr,Digits);
-      res = OrderSend(Symbol(),cmd,al_LOT_fix, pr,3,0,0,"First",magicSELL,exp,CLR_NONE);
+      res = OrderSend(Symbol(),cmd,al_LOT_fix, pr,3,0,0,"@ip1@g1",magicSELL,exp,CLR_NONE);
       try++;
    }   
 } 

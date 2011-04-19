@@ -118,6 +118,7 @@ bool  isParentOrder(int ticket, int magic, string sy = ""){
 			sy = NULL;
 	
       if(!checkOrderByTicket(ticket, CHK_TYLESS, sy, magic, 1)) return(false); // проверим, чтоб ордер был рыночным
+     
       //----
       if(!OrderSelect(ticket, SELECT_BY_TICKET)) return(false); //на всякий случай
    //================
@@ -125,10 +126,16 @@ bool  isParentOrder(int ticket, int magic, string sy = ""){
    int isParent = StrToInteger(ReadIniString(file_ord, ticket, "isParent", "-1"));
    //----
    if(isParent == -1){
-      if(OrderComment() == "" || StrToInteger(returnComment(OrderComment(),"@ip")) > -1)
+        Print(OrderComment());
+        Print(StrToInteger(returnComment(OrderComment(),"@p")));
+        Print(StrToInteger(returnComment(OrderComment(),"@ip")));
+   
+      if(StrToInteger(returnComment(OrderComment(),"@p")) == -1 || StrToInteger(returnComment(OrderComment(),"@ip")) > -1)
          return(true);
       else
          return(false);   
+   }else{
+    return(true);
    }
 }
 //======================================================================
