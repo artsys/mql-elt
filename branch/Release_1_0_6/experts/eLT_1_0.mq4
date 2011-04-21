@@ -14,7 +14,6 @@
 		[12,13] - ошибка выставления добавочных ордеров.
 		[14] 	- добавлена настройка SO_TP_on_first 
 /*///=================================================================== 
-
 #property copyright "copyright (c) 2008-2011, Morochin <artamir> Artiom"
 #property link      "http://forexmd.ucoz.org, mailto: artamir@yandex.ru"
 
@@ -31,8 +30,6 @@
        OP_SLTP = применяется как флаг операций вычисления сл и тп для ордеров         
        OP_SORD = применяется как флаг операций открытия позиции
 /*///-------------------------------------------------------------------
-#define		OP_SLTP				200
-#define		OP_SORD				100
 
 #define		CHK_SMBMN			500
 #define		CHK_SMB				700
@@ -83,26 +80,26 @@
 //======================================================================
 
 //---- input parameters
-extern         double    TWISE_LOTS        =     20;     // деление ордеров при достижении расчетного значения объема => заданного значения
-extern         int       MN                =     0;      // магик с которым будет работать советник. чужие магики обрабатываться не будут 
-extern string MGP       = "===== MAIN GRID PROP >>>>>>>>>>>>>>>>>";
-extern         int       mgp_Target        =     25;    //Фиксированное значение таргета (отменяется использованием useAVG_H1 или useAVG_D)
-extern         int       mgp_TargetPlus    =      0;    //увеличение таргета в зависимости от уровня на mgp_TargetPlus пунктов
+extern			double		TWISE_LOTS			=     20	;	// деление ордеров при достижении расчетного значения объема => заданного значения
+extern			int			MN					=     0		;	// магик с которым будет работать советник. чужие магики обрабатываться не будут 
+extern string MGP	= "===== MAIN GRID PROP >>>>>>>>>>>>>>>";
+extern			int       mgp_Target        =     25		;	//Фиксированное значение таргета (отменяется использованием useAVG_H1 или useAVG_D)
+extern			int       mgp_TargetPlus    =      0		;	//увеличение таргета в зависимости от уровня на mgp_TargetPlus пунктов
 
-extern         int       mgp_TP_on_first   =     25;    //кол. пунктов для выставления тп на родительский ордер, когда нет сработавших дочерних ордеров
-extern         int       mgp_TP            =     50;    //кол. пунктов для выставления тп на сработавшие ордера сетки. расчет от последнего сработавшего ордера
-extern         int       mgp_TPPlus        =      0;    //увеличение тп от уровня на заданное количество пунктов.
+extern			int       mgp_TP_on_first   =     25			;	//кол. пунктов для выставления тп на родительский ордер, когда нет сработавших дочерних ордеров
+extern			int       mgp_TP            =     50			;	//кол. пунктов для выставления тп на сработавшие ордера сетки. расчет от последнего сработавшего ордера
+extern			int       mgp_TPPlus        =      0			;	//увеличение тп от уровня на заданное количество пунктов.
 
 int       mgp_SL_on_first   =      0;    // стоплосс на первый ордер (в общем пока уберу за ненадобностью) 
-extern         bool      mgp_needSLToAll   =  false;    // выставлять сл на всю сетку от последнего ордера или отдельно на каждый ордер
-extern         int       mgp_SL            =      0;    // зависит от <mgp_needSLToAll> размерность: пункты
-extern			int		mgp_SLPlus			=		0;	// Увеличение сл в зависимости от уровня текущей сетки
+extern			bool	mgp_needSLToAll   =  false				;	// выставлять сл на всю сетку от последнего ордера или отдельно на каждый ордер
+extern			int			mgp_SL				=		0		;	// зависит от <mgp_needSLToAll> размерность: пункты
+extern			int			mgp_SLPlus			=		0		;	// Увеличение сл в зависимости от уровня текущей сетки
 
-extern         bool      mgp_useLimOrders  =   true;    // разрешает советнику использовать лимитную сетку
-extern         int          mgp_LimLevels  =      5;    // количество уровней лимитной сетки, включая родительский ордер
+extern         bool      mgp_useLimOrders  =   true			;	// разрешает советнику использовать лимитную сетку
+extern         int          mgp_LimLevels  =      5			;	// количество уровней лимитной сетки, включая родительский ордер
 
-extern         double    mgp_plusVol       =    0.0;    // увеличение объема след. уровня на величину <mgp_plusVol> (+)
-extern         double    mgp_multiplyVol   =      2;    // увеличение объема след. уровня в <mgp_multiplyVol> раз   (*)
+extern         double    mgp_plusVol       =    0.0			;	// увеличение объема след. уровня на величину <mgp_plusVol> (+)
+extern         double    mgp_multiplyVol   =      2			;	// увеличение объема след. уровня в <mgp_multiplyVol> раз   (*)
 
 
 extern string ADD_LIMDESC  = "=========== Adding lim. order as parent";
@@ -124,10 +121,10 @@ extern         double     		add_Stop_fixVol            = 0.1	;	// фиксированный 
 																		// Соглашение: сетка для добавочного ордера расчитывается из настроек <mgp_> 																		
 																		
 extern   string AL_DESC = "=========== AUTO_LOT SETUP ==========";
-extern         double     al_LOT_fix           =    0.1;         // фиксированный стартовый лот
-extern            bool    al_needAutoLots      =  false;         // разрешает авторасчет объема родительского ордера
-                     bool    al_useMarginMethod      = true;     // разрешает использовать метод залога
-extern               double  al_DepositPercent       =    1;     // процент от депозита для расчета методом залога                     
+extern			double	al_LOT_fix           =    0.1				;	// фиксированный стартовый лот
+extern			bool	al_needAutoLots      =  false				;	// разрешает авторасчет объема родительского ордера
+                     bool    al_useMarginMethod      = true			;	// разрешает использовать метод залога
+extern               double  al_DepositPercent       =    1			;	// процент от депозита для расчета методом залога                     
 extern string MGP_END   = "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<";
 
 extern string SOP       = "===== STOP ORDERS PROP >>>>>>>>>>>>>>>";
@@ -175,11 +172,12 @@ extern string    ex_END_OPEN_FIRST_ORDER  = "===================================
    ---------------------
    Переменные:
 /*///-------------------------------------------------------------------
-bool	isDone			= true	;	// определяет флаг окончания функции start()
-int		SPREAD			= 0		;	// Спред валютной пары, на которой запущен советник
+bool	isDone				= true	;	// определяет флаг окончания функции start()
+int		SPREAD				= 0		;	// Спред валютной пары, на которой запущен советник
 string	INIFile_ord		= ""	;	// ини файл ордеров
-string	INIFile_name	= ""	;	// основное название файла
+string	INIFile_name		= ""	;	// основное название файла
 string	INIFile_folder	= ""	;	// путь расположения файлов советника
+string  file_ord			= ""    ;   // дублирует INIFile_ord
 //======================================================================
 
 /*///==============================================================
@@ -195,6 +193,7 @@ string	INIFile_folder	= ""	;	// путь расположения файлов советника
 #include <libeLT.mqh>
 //-------
 int initLibs(){
+/*
    //--- libHelpFunc
    if(StringFind(libHelp_Ver(),"v1.0") == -1){
       logIni(StringConcatenate("last release - ", "v1.0"),
@@ -223,6 +222,7 @@ int initLibs(){
               StringConcatenate("initLibs: libOrdersFunc ",libINIFile_Ver()));
    }
    //--
+   */
 }   
 //=================================================================
 
@@ -249,6 +249,8 @@ string logIni(string str_err, string fn=""){
    Print("===============================");
 }
 //==============================================================
+
+
 
 /*///===================================================================
    Версия: 2011.04.19
