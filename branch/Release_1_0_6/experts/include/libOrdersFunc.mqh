@@ -5,7 +5,6 @@
 //+------------------------------------------------------------------+
 #property copyright "Copyright © 2011, Morochin <artamir> Artiom"
 #property link      "http://forexmd.ucoz.org  e-mail: artamir@yandex.ru"
-#property library
 
 /*///===================================================================
    Версия: 2011.03.24

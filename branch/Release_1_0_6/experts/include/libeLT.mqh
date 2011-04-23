@@ -51,8 +51,6 @@ string libeLT_Ver(){
 }
 //======================================================================
 
-
-
 /*///===================================================================
    Версия: 2011.03.28
    ---------------------
@@ -212,7 +210,7 @@ int getOrderLevel(int ticket){
 //======================================================================
 
 /*///===================================================================
-   Версия: 2011.03.29
+   Версия: 2011.04.22
    ---------------------
    Описание:
       возвращает результат проверки - является ли текущий уровень 
@@ -233,12 +231,13 @@ int isMarketLevel(int parent_ticket, int level, int magic, string sy = ""){
    
       int t = OrdersTotal();
       for(int i = t; i >= 0; i--){
-         int      ot    = OrderTicket();
-         int      oty   = OrderType();
-         string   ocomm = OrderComment(); 
          //==============
             if(!OrderSelect(i, SELECT_BY_POS, MODE_TRADES)) continue;
             //---
+			int      ot    = OrderTicket();
+			int      oty   = OrderType();
+			string   ocomm = OrderComment(); 
+			//---
             if(!checkOrderByTicket(ot, CHK_TYLESS, sy, magic, 1)) continue; // проверим, чтоб ордер был рыночным
             //---
             int olevel = getOrderLevel(ot);

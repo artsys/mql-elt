@@ -1,6 +1,6 @@
 //+------------------------------------------------------------------+
 //|                                                          eLT.mq4 |
-//|                                                 ver 1.0.6.0419.23|
+//|                                                 ver 1.0.7.0423.00|
 //|                                         программирование artamir |
 //|                                                artamir@yandex.ru |
 //+------------------------------------------------------------------+
@@ -13,6 +13,8 @@
 		[9] 	- Добавление добавочного стопового ордера.
 		[12,13] - ошибка выставления добавочных ордеров.
 		[14] 	- добавлена настройка SO_TP_on_first 
+				- Исправлен расчет таргета, тп и сл для сеток порядка >= 2
+				- Исправлено libELT: isMarketLevel
 /*///=================================================================== 
 #property copyright "copyright (c) 2008-2011, Morochin <artamir> Artiom"
 #property link      "http://forexmd.ucoz.org, mailto: artamir@yandex.ru"
@@ -82,6 +84,7 @@
 //---- input parameters
 extern			double		TWISE_LOTS			=     20	;	// деление ордеров при достижении расчетного значения объема => заданного значения
 extern			int			MN					=     0		;	// магик с которым будет работать советник. чужие магики обрабатываться не будут 
+//{--- MAIN GRID PROP
 extern string MGP	= "===== MAIN GRID PROP >>>>>>>>>>>>>>>";
 extern			int       mgp_Target        =     25		;	//Фиксированное значение таргета (отменяется использованием useAVG_H1 или useAVG_D)
 extern			int       mgp_TargetPlus    =      0		;	//увеличение таргета в зависимости от уровня на mgp_TargetPlus пунктов
@@ -100,8 +103,9 @@ extern         int          mgp_LimLevels  =      5			;	// количество уровней ли
 
 extern         double    mgp_plusVol       =    0.0			;	// увеличение объема след. уровня на величину <mgp_plusVol> (+)
 extern         double    mgp_multiplyVol   =      2			;	// увеличение объема след. уровня в <mgp_multiplyVol> раз   (*)
+//}
 
-
+//{--- Adding lim. order
 extern string ADD_LIMDESC  = "=========== Adding lim. order as parent";
 extern         bool       add_useAddLimit          =	false		;	// разрешает советнику выставлять добавочный лимитный ордер как родительский
 extern         int        	add_LimitLevel              =	3		;	// уровень сетки, от которого будет произведен расчет цены добавочного ордера
@@ -110,7 +114,9 @@ extern         bool       	add_Limit_useLevelVol    =	true		;	// разрешает совет
 extern         double     		add_Limit_multiplyVol       =	1	;	// коэф. умножения объема уровня <add_LimitLevel> основной сетки лимитных ордеров
 extern         double     		add_Limit_fixVol            = 0.1	;	// фиксированный объем добавочного ордера
 																		// Соглашение: сетка для добавочного ордера расчитывается из настроек <mgp_> 
+//}
 
+//{--- Adding stop order
 extern string ADD_STOPDESC  = "=========== Adding stop order as parent";
 extern         bool       add_useAddStop          =	false		;	// разрешает советнику выставлять добавочный стоповый ордер как родительский
 extern         int        	add_StopLevel              =	3		;	// уровень сетки, от которого будет произведен расчет цены добавочного ордера. Родительский ордер находится на 1-м уровне 
@@ -118,15 +124,19 @@ extern         int        	add_Stop_Pip               =	15		;	// сколько пунктов
 extern         bool       	add_Stop_useLevelVol    =	true		;	// разрешает советнику использовать настройку <add_Stop_multiplyVol> иначе будет использоваться <add_Stop_fixVol>  
 extern         double     		add_Stop_multiplyVol       =	1	;	// коэф. умножения объема уровня <add_StopLevel> основной сетки лимитных ордеров
 extern         double     		add_Stop_fixVol            = 0.1	;	// фиксированный объем добавочного ордера
-																		// Соглашение: сетка для добавочного ордера расчитывается из настроек <mgp_> 																		
-																		
+	// Соглашение: сетка для добавочного ордера расчитывается из настроек <mgp_> 								
+//}	
+
+//{--- auto lot																		
 extern   string AL_DESC = "=========== AUTO_LOT SETUP ==========";
 extern			double	al_LOT_fix           =    0.1				;	// фиксированный стартовый лот
 extern			bool	al_needAutoLots      =  false				;	// разрешает авторасчет объема родительского ордера
                      bool    al_useMarginMethod      = true			;	// разрешает использовать метод залога
 extern               double  al_DepositPercent       =    1			;	// процент от депозита для расчета методом залога                     
 extern string MGP_END   = "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<";
+//}
 
+//{--- Стоповые ордера
 extern string SOP       = "===== STOP ORDERS PROP >>>>>>>>>>>>>>>";
 extern         bool     SO_useStopLevels		=    false			;	// разрешает советнику использовать выставление стоповых ордеров
 extern         int             SO_Levels				=  -1		;	// -1 - количество уровней совпадает с уровнями лимитных ордеров, либо задает количетво стоповых уровней
@@ -151,6 +161,7 @@ extern         double        SO_TP						=   1.5		;	// описание аналогично пред. 
 extern         double        SO_TP_on_first				=   1.5		;	// описание аналогично пред. настройке (расчитывается как гридЛевел-1)
 extern         double        SO_SL						=   1.5		;	// описание аналогично пред. настройке
 extern string SOP_END   = "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<"	;	
+//}
 
 //--------------------------------------
 // открытие первого ордера (для тестера)
@@ -174,9 +185,9 @@ extern string    ex_END_OPEN_FIRST_ORDER  = "===================================
 /*///-------------------------------------------------------------------
 bool	isDone				= true	;	// определяет флаг окончания функции start()
 int		SPREAD				= 0		;	// Спред валютной пары, на которой запущен советник
-string	INIFile_ord		= ""	;	// ини файл ордеров
+string	INIFile_ord			= ""	;	// ини файл ордеров
 string	INIFile_name		= ""	;	// основное название файла
-string	INIFile_folder	= ""	;	// путь расположения файлов советника
+string	INIFile_folder		= ""	;	// путь расположения файлов советника
 string  file_ord			= ""    ;   // дублирует INIFile_ord
 //======================================================================
 
@@ -253,7 +264,7 @@ string logIni(string str_err, string fn=""){
 
 
 /*///===================================================================
-   Версия: 2011.04.19
+   Версия: 2011.04.22
    ---------------------
    Описание:
       Возвращает текущее значение тп в зависимости 
@@ -289,9 +300,9 @@ int getTP(int grid_level, int level){
             //---
             if(SO_useKoefProp){
 				if(level == 0){
-					return(mgp_TP_on_first + (mgp_TP_on_first * SO_TP_on_first * (grid_level-2)));
+					return(mgp_TP_on_first * MathPow(SO_TP_on_first, (grid_level-2)));
 				}else{
-					return((mgp_TP + (mgp_TPPlus * (level-1))) * SO_TP * (grid_level-1));
+					return((mgp_TP + (mgp_TPPlus * (level-1))) * MathPow(SO_TP, (grid_level-1)));
 				}	
             }else{
                return(SO_TP);
@@ -303,7 +314,7 @@ int getTP(int grid_level, int level){
 //======================================================================
 
 /*///===================================================================
-   Версия: 2011.04.01
+   Версия: 2011.04.22
    ---------------------
    Описание:
       Возвращает текущее значение sl в зависимости 
@@ -313,7 +324,7 @@ int getTP(int grid_level, int level){
       нет
    ---------------------
    Переменные:
-		grid_level	-	уровень вложенности сетки
+		grid_level	-	порядок сетки
 
 /*///-------------------------------------------------------------------
 int getSL(int grid_level, int level){
@@ -338,9 +349,9 @@ int getSL(int grid_level, int level){
             //---
             if(SO_useKoefProp){
 				if(level == 0){
-					return(mgp_SL * SO_SL * (grid_level-1));
+					return(mgp_SL * MathPow(SO_SL, (grid_level-1)));
 				}else{
-					return((mgp_SL + (mgp_SLPlus * (level-1))) * SO_SL * (grid_level-1));
+					return((mgp_SL + (mgp_SLPlus * (level-1))) * MathPow(SO_SL, (grid_level-1)));
 				}	
             }else{
                return(SO_SL);
@@ -352,7 +363,7 @@ int getSL(int grid_level, int level){
 //======================================================================
 
 /*///===================================================================
-   Версия: 2011.03.29
+   Версия: 2011.04.22
    ---------------------
    Описание:
       Возвращает текущее значение таргета в зависимости 
@@ -362,31 +373,32 @@ int getSL(int grid_level, int level){
       нет
    ---------------------
    Переменные:
-      condition    = логическое сравнение
-      ifTrue       = значение в случае condition = ИСТИНА
-      ifFalse      = значение в случае condition = ЛОЖЬ
-
+		grid_level - порядок сетки
+		level - уровень сетки
 /*///-------------------------------------------------------------------
 int getTarget(int grid_level, int level){
+	
+	int trg = mgp_Target * level + (mgp_TargetPlus*level-1);
+	
    // проверка на 1-й гридЛевел
       if(grid_level <= 1){
-         return(mgp_Target * level + (mgp_TargetPlus*level-1));
+         return(trg);
       }
    //<<<<<<<
    // гридЛевел > 1
       if(grid_level >= 2){
-         //значит у нас сработал стоповый ордер
-         //Алгоритм: 
-            // проверим таргет для стоповых будет фикс или коэф
-            // для коэф: таргет лим. сетки * гридЛевел
-            //    чтоб получить таргеты как для родительской сетки, нужно все коэф = 1;
-            // для фикса: возвращаем заданное в настройках значение
-            //---
-            if(SO_useKoefProp){
-               return((mgp_Target * level + (mgp_TargetPlus*level-1)) * SO_Target * (grid_level-1));
-            }else{
-               return(SO_Target*(level));
-            }      
+		//значит у нас сработал стоповый ордер
+		//Алгоритм: 
+			// проверим таргет для стоповых будет фикс или коэф
+			// для коэф: таргет лим. сетки * коэф. в степени(гридЛевел-1)
+			//    чтоб получить таргеты как для родительской сетки, нужно все коэф = 1;
+			// для фикса: возвращаем заданное в настройках значение
+			//---
+			if(SO_useKoefProp){
+				return(trg * MathPow(SO_Target, (grid_level-1)));
+			}else{
+				return(SO_Target*(level));
+			}      
       }
    //<<<<<<<
 }
@@ -704,19 +716,19 @@ void startCheckOrders(){
 							//---
 							if(idx_L < mgp_LimLevels && mgp_useLimOrders){
 								//---						      
-								aLevels	[idx_L]	[idx_oty]	[idx_price     	]	=	calcPrice(parent_opr,	parent_type,	target);
+								aLevels[idx_L][idx_oty][idx_price     	]	=	calcPrice(parent_opr,	parent_type,	target);
 																				//-----					
-								aLevels	[idx_L]	[idx_oty]	[idx_vol       	]	=	calcLimitVol(	parent_vol,	idx_L);
+								aLevels[idx_L][idx_oty][idx_vol       	]	=	calcLimitVol(	parent_vol,	idx_L);
 																				//-----				
-								aLevels	[idx_L]	[idx_oty]	[idx_isMarket  	]	=	isMarketLevel(	parent_ticket,	idx_L,	MN, Symbol());
+								aLevels[idx_L][idx_oty][idx_isMarket  	]	=	isMarketLevel(	parent_ticket,	idx_L,	MN, Symbol());
 																				//------				
-								aLevels	[idx_L]	[idx_oty]	[idx_ParentType	]	=	parent_type;
+								aLevels[idx_L][idx_oty][idx_ParentType	]	=	parent_type;
 								//---
 								string sVolLevel = getLevelOpenedVol(	parent_ticket,	idx_L,	idx_oty,	MN, Symbol()); // возвращает результат в виде "@vm1.6@vp3.2" vm - объем рыночных, vp - отложенных
 								//---
-								aLevels	[idx_L]	[idx_oty]	[idx_volMarket 	]	=	StrToDouble(	returnComment(sVolLevel	, "@vm_")	);
+								aLevels[idx_L][idx_oty][idx_volMarket 	]	=	StrToDouble(	returnComment(sVolLevel	, "@vm_")	);
 																				//------								
-								aLevels	[idx_L]	[idx_oty]	[idx_volPending	]	=	StrToDouble(	returnComment(sVolLevel	, "@vp_")	);
+								aLevels[idx_L][idx_oty][idx_volPending	]	=	StrToDouble(	returnComment(sVolLevel	, "@vp_")	);
 																				//------								
 								//---
 								aLevels[idx_L][idx_oty][idx_send 		]	=	1.00;      
