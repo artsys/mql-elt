@@ -1,4 +1,4 @@
-#summary One-sentence summary of this page.
+#summary Используемая терминология.
 #labels Terminology
 <wiki:toc maxdepth="7">
 
