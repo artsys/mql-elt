@@ -5,6 +5,10 @@
 
 Под ссылкой на скачивание <b>жирным</b> шрифтом указывается номер issue который выполнен в этом релизе
 
+[http://code.google.com/p/mql-elt/downloads/detail?name=Setup_eLT_108_0428_12.exe&can=2&q=#makechanges 1.0.8 4128_12]
+
+  * <b>20</b>, <b>22</b> - добавлен контроль по выставленным объемам уровня.
+
 [http://code.google.com/p/mql-elt/downloads/detail?name=Setup_eLT_107_0423_20.exe&can=2&q=#makechanges 1.0.7 0423_20]
 
   * - Исправлен расчет ТП для открытых уровней сетки
