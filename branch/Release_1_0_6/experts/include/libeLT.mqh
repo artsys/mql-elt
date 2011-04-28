@@ -319,7 +319,9 @@ string getLevelOpenedVol(int parent_ticket, int level, int type, int magic, stri
         
     }
     //---
-    res = StringConcatenate("@vm_",DoubleToStr(vm,2),"@vp_",DoubleToStr(vp,2));
+	string swasLots = ReadIniString(INIFile_grd, parent_ticket, level, "0");
+	double dwasLots = StrToDouble(returnComment(swasLots,"@w"+wasType+"_lot_"));
+    res = StringConcatenate("@vm_",DoubleToStr(vm,2),"@vp_",DoubleToStr(vp,2),"@hl_",dwasLots);
     return(res);    
 }
 //======================================================================
@@ -371,5 +373,35 @@ bool isGridLive(int ticket, int MN){
 		}
 	//}
 	return(res);
+}
+//======================================================================
+
+/*///===================================================================
+	Версия: 2011.04.04
+	---------------------
+	Описание:
+		добавляет описание ордера в файл ордеров
+	---------------------
+	Доп. функции:
+		нет
+	---------------------
+	Переменные:
+		нет
+/*///-------------------------------------------------------------------
+void libELT_addRecordInFileGrid(string filename,	string file_comm){
+	int ticket = StrToInteger(returnComment(file_comm,"@ot"));
+	int grid = StrToInteger(returnComment(file_comm,"@g"));
+	int level = StrToInteger(returnComment(file_comm,"@l"));
+	int parent = StrToInteger(returnComment(file_comm,"@p"));
+	int wasType = StrToInteger(returnComment(file_comm,"@w"));
+	int isParent = StrToInteger(returnComment(file_comm,"@ip"));
+	double level_lots = StrToDouble(returnComment(file_comm,"@wl"));
+	
+	string swasLots = ReadIniString(filename, parent, level, "0");
+	double dwasLots = StrToDouble(returnComment(swasLots,"@w"+wasType+"_lot_"));
+	
+	WriteIniString(filename, parent, level, "@w"+wasType+"_lot_"+DoubleToStr(dwasLots+level_lots,4));
+	
+	Print(filename);
 }
 //======================================================================

@@ -19,6 +19,7 @@
 		<@p> = parent ticket
 		<@l> = level
 		<@g> = grid
+		<@wl> = wasType level lots
 	строка файла ордеров
 		<@ot> = тикет выставленного ордера
 		Параметры файла ордеров

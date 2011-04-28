@@ -1,6 +1,6 @@
 //+------------------------------------------------------------------+
 //|                                                          eLT.mq4 |
-//|                                                 ver 1.0.7.0423.00|
+//|                                                 ver 1.0.8.0428.12|
 //|                                         программирование artamir |
 //|                                                artamir@yandex.ru |
 //+------------------------------------------------------------------+
@@ -15,6 +15,8 @@
 		[14] 	- добавлена настройка SO_TP_on_first 
 				- Исправлен расчет таргета, тп и сл для сеток порядка >= 2
 				- Исправлено libELT: isMarketLevel
+				- startCheckOrders разбита на две части
+				- Добавлен признак "@ip1" для добавочных ордеров.
 /*///=================================================================== 
 #property copyright "copyright (c) 2008-2011, Morochin <artamir> Artiom"
 #property link      "http://forexmd.ucoz.org, mailto: artamir@yandex.ru"
@@ -189,6 +191,7 @@ string	INIFile_ord			= ""	;	// ини файл ордеров
 string	INIFile_name		= ""	;	// основное название файла
 string	INIFile_folder		= ""	;	// путь расположения файлов советника
 string  file_ord			= ""    ;   // дублирует INIFile_ord
+string	INIFile_grd			= ""	;	// ини файл объемов уровней сетки
 //======================================================================
 
 /*///==============================================================
@@ -543,6 +546,56 @@ int fillLevelOrders(int& arr[], int parent_ticket, int level, int wt){
 //======================================================================
 
 
+void startCheckOrders(){
+
+	int t = OrdersTotal();
+	for(int tekOrder = 0; tekOrder <= t; tekOrder++){ // собираем массив aLevels[][][]
+		if(!OrderSelect(tekOrder, SELECT_BY_POS, MODE_TRADES)) continue;	
+			//---
+		int    parent_ticket	=	OrderTicket();
+		int    parent_type		=	OrderType();
+		double parent_opr		=	OrderOpenPrice();
+		string parent_comm		=	OrderComment();
+		double parent_vol		=	OrderLots();
+		int    parent_grid		=	getGrid(parent_ticket); 
+			//---
+		if(!checkOrderByTicket(parent_ticket, CHK_MN, Symbol(), MN, -1)) continue; // проверим, чтоб ордер был рыночным)
+			//---
+		if(!isParentOrder(parent_ticket, MN, Symbol())) {
+			// если это рыночный ордер, то проверим, живой ли родитель.
+			// если родителя нет, то в истории ищем родителя и 
+			// перенастраиваем родительские переменные
+			// согласно историческому ордеру.
+				
+			if(!isParentLive(parent_ticket) && parent_type <= 1){
+				//---
+				parent_ticket = getParentInHistory(parent_ticket);
+				//---
+				OrderSelect(parent_ticket, SELECT_BY_TICKET);
+					parent_type   = OrderType();
+					parent_opr    = OrderOpenPrice();
+					parent_comm   = OrderComment();
+					parent_vol    = OrderLots();
+					parent_grid   = getGrid(parent_ticket); 
+					//------   
+					if(parent_grid <= 1) parent_grid = 1;
+					//---
+					checkParentOrder(parent_ticket);
+			}else{
+				continue;      
+			}
+		}else{
+			checkParentOrder(parent_ticket);
+			//---
+			if(!isParentLive(parent_ticket)){
+					//---
+					parent_ticket = getParentInHistory(parent_ticket);
+					checkParentOrder(parent_ticket);
+			}		
+		}
+	}
+}
+
 /*///===================================================================
    Версия: 2011.04.08
    ---------------------
@@ -586,14 +639,12 @@ int fillLevelOrders(int& arr[], int parent_ticket, int level, int wt){
       нет
 
 /*///-------------------------------------------------------------------
-void startCheckOrders(){
+void checkParentOrder(int tekOrder){
 
 	double aLevels[][aL_AllTypes][aL_MAXSET]; // 1-е измерение оставили пустым для ресайза
 
-	int t = OrdersTotal();
-	for(int tekOrder = 0; tekOrder <= t; tekOrder++){ // собираем массив aLevels[][][]
 		//=================
-			if(!OrderSelect(tekOrder, SELECT_BY_POS, MODE_TRADES)) continue;
+			if(!OrderSelect(tekOrder, SELECT_BY_TICKET)) return(0);
 			//----
 			int    thisOrderTicket	=	OrderTicket(); 
 			int    parent_ticket	=	OrderTicket();
@@ -606,38 +657,7 @@ void startCheckOrders(){
 			//------   
 			if(parent_grid <= 1) parent_grid = 1;
 			//------
-			if(!checkOrderByTicket(parent_ticket, CHK_MN, Symbol(), MN, -1)) continue; // проверим, чтоб ордер был рыночным)
-			//------
-			if(!isParentOrder(parent_ticket, MN, Symbol())) {
-				// если это рыночный ордер, то проверим, живой ли родитель.
-				// если родителя нет, то в истории ищем родителя и 
-				// перенастраиваем родительские переменные
-				// согласно историческому ордеру.
 				
-				if(parent_type <= 1){
-					//--- у нас рыночный ордер
-					if(!isParentLive(parent_ticket)){
-						//---
-						parent_ticket = getParentInHistory(parent_ticket);
-						//---
-						OrderSelect(parent_ticket, SELECT_BY_TICKET);
-							parent_type   = OrderType();
-							parent_opr    = OrderOpenPrice();
-							parent_comm   = OrderComment();
-							parent_vol    = OrderLots();
-
-							parent_grid   = getGrid(parent_ticket); 
-							//------   
-							if(parent_grid <= 1) parent_grid = 1;
-						
-					}else{
-						continue;	// если родитель живой, тогда продолжим цикл по ордерам
-					}
-				}else{
-					continue;      
-				}
-				Print("PARENT = ", parent_ticket);	
-			}	
 			
 		//=================
 		// значит наш ордер родитель
@@ -731,7 +751,13 @@ void startCheckOrders(){
 								aLevels[idx_L][idx_oty][idx_volPending	]	=	StrToDouble(	returnComment(sVolLevel	, "@vp_")	);
 																				//------								
 								//---
-								aLevels[idx_L][idx_oty][idx_send 		]	=	1.00;      
+								// проверим выставленные объемы, если больше расчетного, то в топку
+								double wasLots = StrToDouble(	returnComment(sVolLevel	, "@hl_"));
+								
+								if(wasLots >= aLevels[idx_L][idx_oty][idx_vol])
+									aLevels[idx_L][idx_oty][idx_send]	=	-1.00;
+								else	
+									aLevels[idx_L][idx_oty][idx_send]	=	1.00;      
 							}//if(idx_L < mgp_LimLevels && mgp_useLimOrders){   
 						}//}<<<< обработка лимитных ордеров         
 					
@@ -1205,7 +1231,7 @@ void startCheckOrders(){
 									if(idx_oty == OP_ADD_SELLLIMIT)
 										cmd = OP_SELLLIMIT;
 									//---	
-									pending_comm = pending_comm+"@g"+grid_level+"@w"+idx_oty;
+									pending_comm = pending_comm+"@g"+grid_level+"@w"+idx_oty+"@ip1";
 								}
 							//}
 							
@@ -1219,7 +1245,7 @@ void startCheckOrders(){
 									if(idx_oty == OP_ADD_SELLSTOP)
 										cmd = OP_SELLSTOP;
 									//---	
-									pending_comm = pending_comm+"@g"+grid_level+"@w"+idx_oty;
+									pending_comm = pending_comm+"@g"+grid_level+"@w"+idx_oty+"@ip1";
 								}
 							//}
 							
@@ -1240,6 +1266,7 @@ void startCheckOrders(){
 									}else{
 										file_comm = file_comm + "@ot"+res+pending_comm;
 										addRecordInFileOrders(INIFile_ord,	file_comm);
+										libELT_addRecordInFileGrid(INIFile_grd, file_comm+"@wl"+send_vol);
 									}
 								//}
 							}
@@ -1249,8 +1276,7 @@ void startCheckOrders(){
 			}
 		//}
 	//}
-	}
-	//Sleep(1000);
+return(0);	
 }
 //======================================================================
 
@@ -1297,6 +1323,7 @@ int init(){
 		INIFile_name   = StringConcatenate(EXP_NAME,"_",AccountNumber(),"_",Symbol(),"_",MN);
 		INIFile_folder = TerminalPath()+"\\experts\\files\\";
 		INIFile_ord    = StringConcatenate(INIFile_folder,INIFile_name,".ord");
+		INIFile_grd		= StringConcatenate(INIFile_folder,INIFile_name,".grd");
 		Print(INIFile_ord);
 		//---
 		initLibs(); // инициализируем библиотеки   
