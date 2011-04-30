@@ -1014,7 +1014,7 @@ void checkParentOrder(int tekOrder){
 		//}
 		
 		//{3.2--- установим тп для родительского ордера
-			if(thisOrderTicket == parent_ticket){
+			if(libOrdersFunc_isThisOrderLive(parent_ticket)){
 				// значит родитель живой
 				if(maxMarketLevel_tp == 0){
 					// сработавшим уровнем является только уровень родителя

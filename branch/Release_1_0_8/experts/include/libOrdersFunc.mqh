@@ -35,6 +35,14 @@
 #define  TL_VOL			2	// TL - Twise lot
 
 
+bool libOrdersFunc_isThisOrderLive(int ticket){
+	if(!OrderSelect(ticket, SELECT_BY_TICKET)) return(false);
+	//---
+	if(OrderCloseTime() > 0) return(false);
+	//---
+	return(true);
+}
+
 /*///==================================================================
 // Версия: 2011.03.24
 //---------------------
