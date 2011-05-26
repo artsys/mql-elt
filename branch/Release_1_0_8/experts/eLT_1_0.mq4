@@ -1,6 +1,6 @@
 //+------------------------------------------------------------------+
 //|                                                          eLT.mq4 |
-//|                                                 ver 1.0.8.0428.12|
+//|                                                 ver 1.0.9.0526.09|
 //|                                         программирование artamir |
 //|                                                artamir@yandex.ru |
 //+------------------------------------------------------------------+
@@ -17,6 +17,9 @@
 				- Исправлено libELT: isMarketLevel
 				- startCheckOrders разбита на две части
 				- Добавлен признак "@ip1" для добавочных ордеров.
+			-----
+				- Добавлена библиотека libCO_closeByProfit
+		[28]	- Исправлен баг с удалением отложенников, выставленных вручную, при МН = 0.		
 /*///=================================================================== 
 #property copyright "copyright (c) 2008-2011, Morochin <artamir> Artiom"
 #property link      "http://forexmd.ucoz.org, mailto: artamir@yandex.ru"
@@ -201,6 +204,7 @@ string	INIFile_grd			= ""	;	// ини файл объемов уровней сетки
          Инициализация и проверка версии библиотеки функций помощи
          <libHelpFunc> 
 /*///--------------------------------------------------------------
+#include <libCloseOrders.mqh>
 #include <libHelpFunc.mqh>
 #include <libOrdersFunc.mqh>
 #include <libINIFileFunc.mqh>
@@ -1300,9 +1304,13 @@ void delPendingOrders(){
 		//==========
 			if(!OrderSelect(thisOrder, SELECT_BY_POS, MODE_TRADES)) continue;
 			//---
-			int	ot	= OrderTicket();
-			int oty	= OrderType();
+			int		ot		= OrderTicket();
+			int 	oty		= OrderType();
+			string 	ocomm 	= OrderComment();
 			//---
+				if(StrToInteger(returnComment(ocomm,"@p")) == -1){
+					if(isParentOrder(ot, MN, Symbol())) continue;
+				}
 				if(!checkOrderByTicket(ot, CHK_TYMORE, Symbol(), MN, 2)) continue;
 				//---
 				if(isGridLive(ot, MN)) continue; // сетка еще живая, значит удалять ордер нет смысла :)
@@ -1351,6 +1359,7 @@ int start(){
    else
       isDone = false;
    //------
+   libCO_closeByProfit();
    startCheckOrders(); 
    delPendingOrders();
    //---
@@ -1364,8 +1373,7 @@ int start(){
 }
 //========================}} 
 
-void OpenPendingOrders(int magicBUY = 0, int magicSELL = 0)
-{
+void OpenPendingOrders(int magicBUY = 0, int magicSELL = 0){
 int res = -1;
 int tryOpen = 5;
 

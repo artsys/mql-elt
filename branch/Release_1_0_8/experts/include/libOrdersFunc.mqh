@@ -97,10 +97,14 @@ double TwisePending(double nlot,double ulot,int rejim, double TL)
 //=======================================================
 
 /*///===================================================================
-   Версия: 2011.03.24
+   Версия: 2011.05.26
    ---------------------
    Описание:
-      проверяет, является ли ордер родительским
+      проверяет, является ли ордер родительским 
+   ---------------------
+   Изменения:
+		Удалил проверку на рыночный ордер.
+		Удалил проверку на @ip в комменте ордера.
    ---------------------
    Доп. функции:
       нет
@@ -115,8 +119,12 @@ bool  isParentOrder(int ticket, int magic, string sy = ""){
 		if(sy == "")
 			sy = NULL;
 	
-      if(!checkOrderByTicket(ticket, CHK_TYLESS, sy, magic, 1)) return(false); // проверим, чтоб ордер был рыночным
-     
+
+		/* if(!checkOrderByTicket(ticket, CHK_TYLESS, sy, magic, 1)){
+			//if(StrToInteger())
+			return(false); // проверим, чтоб ордер был рыночным
+		} */	
+    
       //----
       if(!OrderSelect(ticket, SELECT_BY_TICKET)) return(false); //на всякий случай
    //================
@@ -128,7 +136,9 @@ bool  isParentOrder(int ticket, int magic, string sy = ""){
         Print(StrToInteger(returnComment(OrderComment(),"@p")));
         Print(StrToInteger(returnComment(OrderComment(),"@ip")));
    
-      if(StrToInteger(returnComment(OrderComment(),"@p")) == -1 || StrToInteger(returnComment(OrderComment(),"@ip")) > -1)
+      if(StrToInteger(returnComment(OrderComment(),"@p")) == -1)/* 	|| 
+			StrToInteger(returnComment(OrderComment(),"@ip")) > -1 	||
+			StrToInteger(returnComment(OrderComment(),"@ip")) > -1) */
          return(true);
       else
          return(false);   
