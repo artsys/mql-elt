@@ -5,7 +5,7 @@
 
 Под ссылкой на скачивание <b>жирным</b> шрифтом указывается номер issue который выполнен в этом релизе
 
-[1.0.9 0526_09]
+[http://code.google.com/p/mql-elt/downloads/detail?name=Setup_eLT_109_0526_09.exe&can=2&q=#makechanges 1.0.9 0526_09]
   * <b>28</b> - Исправлен баг с удалением отложенников, выставленных вручную, при МН = 0.
 
 [http://code.google.com/p/mql-elt/downloads/detail?name=Setup_eLT_109_0511_12.exe&can=2&q=#makechanges 1.0.9 0511_12]
