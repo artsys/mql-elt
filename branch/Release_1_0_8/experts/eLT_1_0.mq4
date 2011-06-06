@@ -1,6 +1,6 @@
 //+------------------------------------------------------------------+
 //|                                                          eLT.mq4 |
-//|                                                 ver 1.0.9.0526.09|
+//|                                                 ver 1.0.9.0605.12|
 //|                                         программирование artamir |
 //|                                                artamir@yandex.ru |
 //+------------------------------------------------------------------+
@@ -19,7 +19,9 @@
 				- Добавлен признак "@ip1" для добавочных ордеров.
 			-----
 				- Добавлена библиотека libCO_closeByProfit
-		[28]	- Исправлен баг с удалением отложенников, выставленных вручную, при МН = 0.		
+		[28]	- Исправлен баг с удалением отложенников, выставленных вручную, при МН = 0.
+		[32]	- Добавлена библиотека libAutoOpen (libAO)
+		      - Добавлена библиотека libCWT (canWeTrade)
 /*///=================================================================== 
 #property copyright "copyright (c) 2008-2011, Morochin <artamir> Artiom"
 #property link      "http://forexmd.ucoz.org, mailto: artamir@yandex.ru"
@@ -204,11 +206,13 @@ string	INIFile_grd			= ""	;	// ини файл объемов уровней сетки
          Инициализация и проверка версии библиотеки функций помощи
          <libHelpFunc> 
 /*///--------------------------------------------------------------
+#include <libCWT.mqh>
 #include <libCloseOrders.mqh>
 #include <libHelpFunc.mqh>
 #include <libOrdersFunc.mqh>
 #include <libINIFileFunc.mqh>
 #include <libeLT.mqh>
+#include <libAutoOpen.mqh>
 //-------
 int initLibs(){
 /*
@@ -1354,10 +1358,11 @@ int res = 0;
 int start(){
 	res++;
 	//Print("========= START ===== ", res);
-   if(!isDone) 
+   if(!isDone){ 
       return(0); // если не закончена предыдущая ф-ция start(), тогда выходим
-   else
+   }else{
       isDone = false;
+	}
    //------
    libCO_closeByProfit();
    startCheckOrders(); 
@@ -1366,6 +1371,17 @@ int start(){
 	if(OrdersTotal() == 0 && openFirstOrder){
 		OpenPendingOrders();
 	} 
+	//---
+	//********************************
+    //2010,09,09
+    //*******************************
+    if(libCWT_canWeTrade()){
+		if(libAO_needBarsOpen){
+            //delLimits();
+            //collapsArray();
+			libAO_BarOpen();
+        }
+    }
    //------
    isDone = true;
    //Print("<<<<<, END ", res);

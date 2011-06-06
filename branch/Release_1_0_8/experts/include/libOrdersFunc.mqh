@@ -335,6 +335,49 @@ bool checkOrderByTicket(int ticket, int ORD_CHK, string sy="", int MN=0, int ty 
    Версия: 2011.03.24
    ---------------------
    Описание:
+      проверяет ордер по заданным параметрам
+	-----------------------------------------
+	ДОПИСАТЬ!!!!!!!!!!!!
+   ---------------------
+   Доп. функции:
+      нет
+   ---------------------
+   Переменные:
+      sy           = валютная пара(опционально)
+      MN           = магик номер
+	  spar		   = название параметра (строка)
+	  vpar		   = значение параметра (строка)
+      ty           = тип ордера (умолчание "-1" - все ордера)
+/*///-------------------------------------------------------------------
+	bool isOrderWithParam(string spar, string vpar, string sy = "", int magic = 0, int ty = -1){
+	bool res = false;
+	//{---
+		int t = OrdersTotal();
+		for(int idx_ord = t; idx_ord >= 0; idx_ord--){
+			//=======
+				if(!OrderSelect(idx_ord, SELECT_BY_POS, MODE_TRADES)) continue;
+				//---
+				if(OrderMagicNumber() != magic) continue;
+				//---
+				if(sy != ""){
+					if(OrderSymbol() != sy) continue;
+				}else{
+					if(OrderSymbol() != Symbol()) continue;
+				}
+				//---
+				if(returnComment(OrderComment(),spar) != vpar) continue;
+			//=======	
+			return(true);
+		}
+	//}
+	return(res);
+}
+
+
+/*///===================================================================
+   Версия: 2011.03.24
+   ---------------------
+   Описание:
       Запрос на открытие рыночного ордера с выставлением тп и сл в пунктах 
    ---------------------
    Доп. функции:
