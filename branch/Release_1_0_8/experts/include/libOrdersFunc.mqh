@@ -2,6 +2,7 @@
 //|                                                libOrdersFunc.mq4 |
 //|                      Copyright © 2011, Morochin <artamir> Artiom |
 //|               http://forexmd.ucoz.org  e-mail: artamir@yandex.ru |
+//|												 ver. 1.0 20110609_09|
 //+------------------------------------------------------------------+
 #property copyright "Copyright © 2011, Morochin <artamir> Artiom"
 #property link      "http://forexmd.ucoz.org  e-mail: artamir@yandex.ru"
@@ -300,7 +301,7 @@ int getWasType(int ticket){
       MN           = магик номер
       ty           = тип ордера
 /*///-------------------------------------------------------------------
-bool checkOrderByTicket(int ticket, int ORD_CHK, string sy="", int MN=0, int ty = -1){
+bool checkOrderByTicket(int ticket, int ORD_CHK, string sy="", int magic=0, int ty = -1){
    bool res = false;
    //==================
 		if(!OrderSelect(ticket,SELECT_BY_TICKET)) return(false);
@@ -309,7 +310,7 @@ bool checkOrderByTicket(int ticket, int ORD_CHK, string sy="", int MN=0, int ty 
 			if(OrderSymbol() != Symbol())          return(false);
 			//-----
 			if(ORD_CHK <= CHK_MN){
-				if(OrderMagicNumber() != MN)        return(false);
+				if(OrderMagicNumber() != magic)        return(false);
 				//----
 				if(ORD_CHK == CHK_TYMORE){
 					if(OrderType() < ty)             return(false);
