@@ -128,17 +128,19 @@ bool  isParentOrder(int ticket, int magic, string sy = ""){
     
       //----
       if(!OrderSelect(ticket, SELECT_BY_TICKET)) return(false); //на всякий случай
+	  //---
+	  if(OrderType() >= 2) return(false); // ордер не рыночный
    //================
    // Попытаемся проверить ини файл родительских ордеров
    int isParent = StrToInteger(ReadIniString(file_ord, ticket, "isParent", "-1"));
    //----
    if(isParent == -1){
-        Print(OrderComment());
-        Print(StrToInteger(returnComment(OrderComment(),"@p")));
-        Print(StrToInteger(returnComment(OrderComment(),"@ip")));
+ //       Print(OrderComment());
+ //       Print(StrToInteger(returnComment(OrderComment(),"@p")));
+ //       Print(StrToInteger(returnComment(OrderComment(),"@ip")));
    
-      if(StrToInteger(returnComment(OrderComment(),"@p")) == -1)/* 	|| 
-			StrToInteger(returnComment(OrderComment(),"@ip")) > -1 	||
+      if(StrToInteger(returnComment(OrderComment(),"@p")) == -1	|| 
+			StrToInteger(returnComment(OrderComment(),"@ip")) > -1) /*	||
 			StrToInteger(returnComment(OrderComment(),"@ip")) > -1) */
          return(true);
       else
@@ -148,6 +150,21 @@ bool  isParentOrder(int ticket, int magic, string sy = ""){
    }
 }
 //======================================================================
+
+bool isFirstOrder(int ticket, int magic, string sy = ""){
+	bool res = false;
+		if(sy == "") sy = Symbol();
+		//---
+			if(!OrderSelect(ticket, SELECT_BY_TICKET)) return(false);
+			//---
+			if(OrderMagicNumber() != magic) return(false);
+			//---
+			if(OrderSymbol() != sy) return(false);
+			//---
+			if(returnComment(OrderComment(),"@p") != "-1") return(false);
+		//---
+	return(res);
+}
 
 /*///===================================================================
 	Версия: 2011.03.31

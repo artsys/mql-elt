@@ -1,6 +1,6 @@
 //+------------------------------------------------------------------+
 //|                                                          eLT.mq4 |
-//|                                                 ver 1.0.9.0609.09|
+//|                                                 ver 1.0.9.0612.02|
 //|                                         программирование artamir |
 //|                                                artamir@yandex.ru |
 //+------------------------------------------------------------------+
@@ -21,7 +21,8 @@
 				- Добавлена библиотека libCO_closeByProfit
 		[28]	- Исправлен баг с удалением отложенников, выставленных вручную, при МН = 0.
 		[32]	- Добавлена библиотека libAutoOpen (libAO)
-		      - Добавлена библиотека libCWT (canWeTrade)
+				- Добавлена библиотека libCWT (canWeTrade)
+		[33]	- Изменения по этому багфиксу.	  
 /*///=================================================================== 
 #property copyright "copyright (c) 2008-2011, Morochin <artamir> Artiom"
 #property link      "http://forexmd.ucoz.org, mailto: artamir@yandex.ru"
@@ -562,8 +563,10 @@ int fillLevelOrders(int& arr[], int parent_ticket, int level, int wt){
 /*///===================================================================
 
 void startCheckOrders(){
-	
-	double aParentOrders[];
+//	Print("========================");
+//	Print("startCheckOrders    ");
+	double aParentOrders[1];
+	ArrayInitialize(aParentOrders,-1);
 	int dim = 0;
 	
 	int t = OrdersTotal();
@@ -578,6 +581,10 @@ void startCheckOrders(){
 		int    parent_grid		=	getGrid(parent_ticket); 
 			//---
 		if(!checkOrderByTicket(parent_ticket, CHK_TYLESS, Symbol(), MN, 1)) continue; // проверим, чтоб ордер был рыночным)
+		
+			
+			Print("   parent_ticket = ", parent_ticket);
+			
 			//---
 		if(!isParentOrder(parent_ticket, MN, Symbol())) {
 			// если это рыночный ордер, то проверим, живой ли родитель.
@@ -609,6 +616,9 @@ void startCheckOrders(){
 			dim++;
 			ArrayResize(aParentOrders,dim);
 			aParentOrders[dim-1] = parent_ticket;
+			
+//			Print("      isParent ticket = ", parent_ticket);
+//			Print("      dim = ", dim);
 			//checkParentOrder(parent_ticket);
 			//---
 			if(!isParentLive(parent_ticket)){
@@ -621,7 +631,11 @@ void startCheckOrders(){
 			}		
 		}
 	}
-	checkParentOrder(aParentOrders);
+//	Print("========================");
+	if(dim > 0)
+		checkParentOrder(aParentOrders);
+	else 
+		return(0);
 }
 
 /*///===================================================================
@@ -674,10 +688,16 @@ void checkParentOrder(double& aParentOrders[]){//int tekOrder){
 	for(int idx_PO = 0; idx_PO < dim; idx_PO++){
 		
 		int tekOrder = aParentOrders[idx_PO];
+		
+//		Print("==========================");
+//		Print("idx_PO = ",idx_PO);
+//		Print("tekOrder = ", tekOrder);
+//		Print("==========================");
+		
 		double aLevels[][aL_AllTypes][aL_MAXSET]; // 1-е измерение оставили пустым для ресайза
 
 			//=================
-				if(!OrderSelect(tekOrder, SELECT_BY_TICKET)) return(0);
+				if(!OrderSelect(tekOrder, SELECT_BY_TICKET)) continue;
 				//----
 				int    thisOrderTicket	=	OrderTicket(); 
 				int    parent_ticket	=	OrderTicket();
@@ -1339,7 +1359,7 @@ void delPendingOrders(){
 			string 	ocomm 	= OrderComment();
 			//---
 				if(StrToInteger(returnComment(ocomm,"@p")) == -1){
-					if(isParentOrder(ot, MN, Symbol())) continue;
+					if(isParentOrder(ot, MN, Symbol()) && isFirstOrder(ot, MN, Symbol())) continue;
 				}
 				if(!checkOrderByTicket(ot, CHK_TYMORE, Symbol(), MN, 2)) continue;
 				//---
