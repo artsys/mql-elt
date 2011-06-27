@@ -1,6 +1,6 @@
 //+------------------------------------------------------------------+
 //|                                                          eLT.mq4 |
-//|                                                 ver 1.0.9.0612.02|
+//|                                                 ver 1.0.9.0627.11|
 //|                                         программирование artamir |
 //|                                                artamir@yandex.ru |
 //+------------------------------------------------------------------+
@@ -1254,7 +1254,9 @@ void checkParentOrder(double& aParentOrders[]){//int tekOrder){
 								string	file_comm			=	"";
 								
 								if(needSend == -1) continue;
-								
+								//---
+								if(idx_L <= maxMarketLevel) continue;
+								//---
 								tp_pip = 0;
 								sl_pip = 0;
 								
