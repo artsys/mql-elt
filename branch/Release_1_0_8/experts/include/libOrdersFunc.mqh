@@ -2,7 +2,7 @@
 //|                                                libOrdersFunc.mq4 |
 //|                      Copyright © 2011, Morochin <artamir> Artiom |
 //|               http://forexmd.ucoz.org  e-mail: artamir@yandex.ru |
-//|												 ver. 1.0 20110609_09|
+//|												 ver. 1.0 20110627_12|
 //+------------------------------------------------------------------+
 #property copyright "Copyright © 2011, Morochin <artamir> Artiom"
 #property link      "http://forexmd.ucoz.org  e-mail: artamir@yandex.ru"
@@ -444,7 +444,10 @@ int OpenMarketSLTP_pip(	string		sy		=	""		,
 //======================================================================
 
 /*///===================================================================
-   Версия: 2011.03.24
+   Версия: 2011.06.27
+   ---------------------
+   Изменения:	Добавлена переменная pr_from
+				Переменная pr заменена на pr_pip
    ---------------------
    Описание:
       Запрос на открытие отложенного ордера с заданной ценой 
@@ -461,28 +464,34 @@ int OpenMarketSLTP_pip(	string		sy		=	""		,
 int OpenPendingPRSLTP_pip(	string		sy		=	""			, 
 							int			cmd		=	-1			, 
 							double		lot		=	0			, 
-							double		pr		=	0			, 
+							double		pr_from	=	0			, 
+							double		pr_pip	=	0			, 
 							int			sl_pip	=	0			, 
 							int			tp_pip	=	0			, 
 							string		comm	=	""			, 
-							int			MN		=	0			, 
+							int			magic	=	0			, 
 							datetime	exp		=	0			, 
 							color		cl		=	CLR_NONE	){
    
    if(sy == ""){
       sy = Symbol();
    }
-   
    //----
-   double pending_pr = MarketInfo(sy, MODE_BID) + orderDirection(cmd,OP_SORD)*pr*Point;
+   if(cmd <= -1) return(-1);
+   //----
+   if(pr_from == 0){
+	pr_from = MarketInfo(sy, MODE_BID);	
+   }
+   //----
+   double pending_pr = pr_from + orderDirection(cmd,OP_SORD)*pr_pip*Point;
    
-   int res = _OrderSend(sy, cmd, lot, pr, 0, 0, 0, comm, MN, exp, "libOrderFunc: OpenPendingPR_SLTP_pip");
+   int res = _OrderSend(sy, cmd, lot, pending_pr, 0, 0, 0, comm, magic, exp, "libOrderFunc: OpenPendingPR_SLTP_pip");
    //============
    if(res > -1){
       OrderSelect(res, SELECT_BY_TICKET);
              pending_pr = OrderOpenPrice();
-              double sl = pending_pr - orderDirection(cmd,OP_SLTP) * sl_pip*Point;
-              double tp = pending_pr + orderDirection(cmd,OP_SLTP) * tp_pip*Point;
+              //double need_sl = pending_pr - orderDirection(cmd,OP_SLTP) * sl_pip*Point;
+              //ouble need_tp = pending_pr + orderDirection(cmd,OP_SLTP) * tp_pip*Point;
       
       if( ModifyOrder_TPSL_pip( res, tp_pip, sl_pip, MN))
          return(res);   

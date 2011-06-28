@@ -1,6 +1,6 @@
 //+------------------------------------------------------------------+
 //|                                                          eLT.mq4 |
-//|                                                 ver 1.0.9.0627.11|
+//|                                                 ver 1.0.9.0627.23|
 //|                                         программирование artamir |
 //|                                                artamir@yandex.ru |
 //+------------------------------------------------------------------+
@@ -23,6 +23,7 @@
 		[32]	- Добавлена библиотека libAutoOpen (libAO)
 				- Добавлена библиотека libCWT (canWeTrade)
 		[33]	- Изменения по этому багфиксу.	  
+				- Добавлен метод открытия родителя для лимитной сетки.
 /*///=================================================================== 
 #property copyright "copyright (c) 2008-2011, Morochin <artamir> Artiom"
 #property link      "http://forexmd.ucoz.org, mailto: artamir@yandex.ru"
@@ -417,7 +418,7 @@ int getTarget(int grid_level, int level){
 //======================================================================
 
 /*///===================================================================
-   Версия: 2011.03.31
+   Версия: 2011.06.27
    ---------------------
    Описание:
       возвращает максимальный рыночный уровень сетки      
@@ -432,7 +433,7 @@ int getTarget(int grid_level, int level){
 int getMaxMarketLevel(double& arr[][][]){
    double res = 0;
 		for(int idx_L = 0; idx_L < ArrayRange(arr, 0); idx_L++){
-			for(int idx_oty = 0; idx_oty <= 5; idx_oty++){ // цикл по лимитным и стоповым ордерам
+			for(int idx_oty = 0; idx_oty <= 3; idx_oty++){ // цикл по лимитным //(и стоповым ордерам)
 				if(arr[idx_L][idx_oty][idx_isMarket] == 1)
 					res = MathMax(res , idx_L);	
 			}
@@ -1265,6 +1266,10 @@ void checkParentOrder(double& aParentOrders[]){//int tekOrder){
 										tp_pip 	= getTP(grid_level, idx_L);
 										int cmd = idx_oty;
 										pending_comm = pending_comm+"@g"+grid_level+"@w"+idx_oty;
+										OrderSelect(parent, SELECT_BY_TICKET);
+										string openMethod = returnComment(OrderComment(),"@o");
+								
+										pending_comm	= pending_comm + "@o"+openMethod;
 									}
 								//}
 								

@@ -104,7 +104,7 @@ string returnComment(string comm, string rejim = ""){
 }
 
 /*///===================================================================
-	Версия: 2011.04.04
+	Версия: 2011.06.27
 	---------------------
 	Описание:
 		добавляет описание ордера в файл ордеров
@@ -122,6 +122,7 @@ void addRecordInFileOrders(string filename,	string file_comm){
 	int parent = StrToInteger(returnComment(file_comm,"@p"));
 	int wasType = StrToInteger(returnComment(file_comm,"@w"));
 	int isParent = StrToInteger(returnComment(file_comm,"@ip"));
+	string openMethod = returnComment(file_comm,"@o");
 	
 	int x = WriteIniString(filename, ticket, "isParent", isParent);
 	Print("x = ",x);
@@ -129,6 +130,7 @@ void addRecordInFileOrders(string filename,	string file_comm){
 	WriteIniString(filename, ticket, "level", level);
 	WriteIniString(filename, ticket, "parent", parent);
 	WriteIniString(filename, ticket, "wasType", wasType);
+	WriteIniString(filename, ticket, "openMethod", openMethod);
 	
 	Print(filename);
 }
