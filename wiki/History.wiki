@@ -5,6 +5,9 @@
 
 Под ссылкой на скачивание <b>жирным</b> шрифтом указывается номер issue который выполнен в этом релизе
 
+[http://code.google.com/p/mql-elt/downloads/detail?name=Setup_eLT_109_0627_23.exe&can=2&q=#makechanges 1.0.9 0627_23]
+  * - Добавлен метод открытия родителя для лимитной сетки. 
+
 [http://code.google.com/p/mql-elt/downloads/detail?name=Setup_eLT_109_0627_11.exe&can=2&q=#makechanges 1.0.9 0627_11]
   * <b>33</b> - Если уровень сетки меньше максимального рыночного уровня, то отложенные дочерние ордера не выставляются.
 
