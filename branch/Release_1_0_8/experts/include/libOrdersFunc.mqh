@@ -444,14 +444,17 @@ int OpenMarketSLTP_pip(	string		sy		=	""		,
 //======================================================================
 
 /*///===================================================================
-   Версия: 2011.06.27
+   Версия: 2011.06.28
    ---------------------
    Изменения:	Добавлена переменная pr_from
 				Переменная pr заменена на pr_pip
    ---------------------
    Описание:
       Запрос на открытие отложенного ордера с заданной ценой 
-      с выставлением тп и сл в пунктах 
+      или с расчетной ценой в пунктах от заданной цены
+	  с выставлением тп и сл в пунктах 
+	  
+	  Если pr_from = 0 тогда для опорного ценового уровня используем БИД
    ---------------------
    Доп. функции:
       ._OrderSend()-открываем ордер без тп и сл
@@ -473,19 +476,22 @@ int OpenPendingPRSLTP_pip(	string		sy		=	""			,
 							datetime	exp		=	0			, 
 							color		cl		=	CLR_NONE	){
    
+   Print("pr_from = ",pr_from);
+   Print("pr_pip = ",pr_pip);
+   
    if(sy == ""){
       sy = Symbol();
    }
    //----
    if(cmd <= -1) return(-1);
    //----
-   if(pr_from == 0){
+   if(pr_from < 0){
 	pr_from = MarketInfo(sy, MODE_BID);	
    }
    //----
    double pending_pr = pr_from + orderDirection(cmd,OP_SORD)*pr_pip*Point;
    
-   int res = _OrderSend(sy, cmd, lot, pending_pr, 0, 0, 0, comm, magic, exp, "libOrderFunc: OpenPendingPR_SLTP_pip");
+   int res = _OrderSend(sy, cmd, lot, pending_pr, 0, 0, 0, comm, magic, exp, "libOrderFunc: OpenPendingPRSLTP_pip");
    //============
    if(res > -1){
       OrderSelect(res, SELECT_BY_TICKET);

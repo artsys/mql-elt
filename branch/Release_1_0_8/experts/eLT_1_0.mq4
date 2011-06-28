@@ -1,6 +1,6 @@
 //+------------------------------------------------------------------+
 //|                                                          eLT.mq4 |
-//|                                                 ver 1.0.9.0627.23|
+//|                                                 ver 1.0.9.0628.15|
 //|                                         программирование artamir |
 //|                                                artamir@yandex.ru |
 //+------------------------------------------------------------------+
@@ -327,7 +327,7 @@ int getTP(int grid_level, int level){
 //======================================================================
 
 /*///===================================================================
-   Версия: 2011.04.22
+   Версия: 2011.06.28
    ---------------------
    Описание:
       Возвращает текущее значение sl в зависимости 
@@ -358,9 +358,12 @@ int getSL(int grid_level, int level){
             // проверим тп для стоповых будет фикс или коэф
             // для коэф: тп лим. сетки * гридЛевел
             //    чтоб получить тп как для родительской сетки, нужно все коэф = 1;
+			//	  если коэф = 0, тогда считаем что сл не нужен и возвращаем 0
             // для фикса: возвращаем заданное в настройках значение
             //---
             if(SO_useKoefProp){
+				if(SO_SL == 0) return(0);
+				//---	
 				if(level == 0){
 					return(mgp_SL * MathPow(SO_SL, (grid_level-1)));
 				}else{
@@ -562,7 +565,6 @@ int fillLevelOrders(int& arr[], int parent_ticket, int level, int wt){
 	---------------
 		2011.06.09 - [+] Массив родительских ордеров, чтоб передать его дальше.
 /*///===================================================================
-
 void startCheckOrders(){
 //	Print("========================");
 //	Print("startCheckOrders    ");
@@ -580,6 +582,7 @@ void startCheckOrders(){
 		string parent_comm		=	OrderComment();
 		double parent_vol		=	OrderLots();
 		int    parent_grid		=	getGrid(parent_ticket); 
+		int	   parent_wasType	= 	StrToInteger(returnComment(parent_comm,"@w"));
 			//---
 		if(!checkOrderByTicket(parent_ticket, CHK_TYLESS, Symbol(), MN, 1)) continue; // проверим, чтоб ордер был рыночным)
 		
@@ -591,8 +594,7 @@ void startCheckOrders(){
 			// если это рыночный ордер, то проверим, живой ли родитель.
 			// если родителя нет, то в истории ищем родителя и 
 			// перенастраиваем родительские переменные
-			// согласно историческому ордеру.
-				
+			// согласно историческому ордеру.	
 			if(!isParentLive(parent_ticket) && parent_type <= 1){
 				//---
 				parent_ticket = getParentInHistory(parent_ticket);
@@ -622,7 +624,7 @@ void startCheckOrders(){
 //			Print("      dim = ", dim);
 			//checkParentOrder(parent_ticket);
 			//---
-			if(!isParentLive(parent_ticket)){
+			if(!isParentLive(parent_ticket) && parent_wasType <= 3){
 					//---
 					parent_ticket = getParentInHistory(parent_ticket);
 					//checkParentOrder(parent_ticket);
@@ -640,7 +642,7 @@ void startCheckOrders(){
 }
 
 /*///===================================================================
-   Версия: 2011.06.09
+   Версия: 2011.06.28
    ---------------------
    Описание:
       основная процедура советника
@@ -1266,9 +1268,9 @@ void checkParentOrder(double& aParentOrders[]){//int tekOrder){
 										tp_pip 	= getTP(grid_level, idx_L);
 										int cmd = idx_oty;
 										pending_comm = pending_comm+"@g"+grid_level+"@w"+idx_oty;
-										OrderSelect(parent, SELECT_BY_TICKET);
+										OrderSelect(parent_ticket, SELECT_BY_TICKET);
 										string openMethod = returnComment(OrderComment(),"@o");
-								
+										Print("      openMethod = ",openMethod);
 										pending_comm	= pending_comm + "@o"+openMethod;
 									}
 								//}
@@ -1313,14 +1315,14 @@ void checkParentOrder(double& aParentOrders[]){//int tekOrder){
 									if(needSend == -1) continue;
 								//=====
 								double	needSendVol = calc_level_vol - (market_level_vol + pending_level_vol);
-								
+								Print(pending_comm);
 								int	sendCount = TwisePending(needSendVol,	0,	TL_COUNT, TWISE_LOTS);
 								double	used_send_vol = 0;
 								for(int ord_count = 1; ord_count <= sendCount; ord_count++){
 									double send_vol = TwisePending(needSendVol, used_send_vol, TL_VOL, TWISE_LOTS);
 									used_send_vol = used_send_vol + send_vol;
 									//{--- 
-										int	res	=	OpenPendingPRSLTP_pip(	Symbol(), cmd, send_vol, pending_level_price, sl_pip, tp_pip, pending_comm, MN, 0, CLR_NONE);
+										int	res	=	OpenPendingPRSLTP_pip(	Symbol(), cmd, send_vol, pending_level_price, 0, sl_pip, tp_pip, pending_comm, MN, 0, CLR_NONE);
 										if(	res == -1 ){
 											addInfo("CAN'T send order at level:"+idx_L+" type: "+cmd+" pr = "+pending_level_price);
 										}else{
@@ -1436,6 +1438,30 @@ int start(){
         }
     }
    //------
+   string strComm = StringConcatenate(
+         // "Circle time = ", (GetTickCount() - startCicle)/100," sec","\n",
+          "AB  = ", AccountBalance(),    "\n",
+          "AE  = ", AccountEquity(),     "\n",
+          "M   = ", AccountMargin(),     "\n",
+          "FM  = ", AccountFreeMargin(), "\n",
+          "NO  = ", OrdersTotal(),       "\n");
+          /*"Lot = ", lot, "\n",
+          "opened Vol BUY  = ",getOpenedVolum(0),"\n",
+          "opened Vol SELL = ",getOpenedVolum(1),"\n\n",
+          "lastCrossMA     = ",lastCrossMA, "\n\n",
+          "max vol BUY     = ", maxVolBUY,"\n",
+          "max vol SELL    = ", maxVolSELL,"\n\n",
+          "max DroDown = ", maxDDPercent,"% \n",
+          "this DD     = ",dd,"% \n\n",
+          "Target = ", Target,  "\n",
+          "tp     = ",tp,       "\n\n",
+          "CLOSE ORDERS BY LOTS","\n",
+          "le = ",lastEquity,"\n",
+          "ne = ",nextEquity,"\n",
+          "e = ",AccountEquity(),"\n\n",
+          "next DD = ",nextDD,"\n\n");
+/**/
+   Comment(strComm);
    isDone = true;
    //Print("<<<<<, END ", res);
    return(0);

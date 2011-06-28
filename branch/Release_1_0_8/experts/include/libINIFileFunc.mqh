@@ -123,16 +123,13 @@ void addRecordInFileOrders(string filename,	string file_comm){
 	int wasType = StrToInteger(returnComment(file_comm,"@w"));
 	int isParent = StrToInteger(returnComment(file_comm,"@ip"));
 	string openMethod = returnComment(file_comm,"@o");
-	
-	int x = WriteIniString(filename, ticket, "isParent", isParent);
-	Print("x = ",x);
+	Print("     openMethod = ",openMethod);
+	WriteIniString(filename, ticket, "isParent", isParent);
 	WriteIniString(filename, ticket, "grid", grid);
 	WriteIniString(filename, ticket, "level", level);
 	WriteIniString(filename, ticket, "parent", parent);
 	WriteIniString(filename, ticket, "wasType", wasType);
 	WriteIniString(filename, ticket, "openMethod", openMethod);
-	
-	Print(filename);
 }
 //======================================================================
 

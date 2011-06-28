@@ -327,11 +327,12 @@ string getLevelOpenedVol(int parent_ticket, int level, int type, int magic, stri
 //======================================================================
 
 /*///===================================================================
-	Версия: 2011.04.10
+	Версия: 2011.06.28
 	---------------------
 	Описание:
 		Возвращает тру, если есть хоть один
-		рыночный ордер принадлежащий сетке,
+		рыночный ордер принадлежащий сетке и 
+		был выставлен как лимитный для
 		проверяемого ордера.
 	---------------------
 	Доп. функции:
@@ -360,13 +361,18 @@ bool isGridLive(int ticket, int MN){
 			//================
 				if(!OrderSelect(thisOrder, SELECT_BY_POS, MODE_TRADES)) continue;
 				//---
-				int ot	= OrderTicket();
-				int oty	= OrderType();
+				int ot		= OrderTicket();
+				int oty		= OrderType();
+				int owty	= StrToInteger(returnComment(OrderComment(),"@w"));
+				if(owty < 0){
+					owty = StrToInteger(ReadIniString(file_ord, ot, "wasType","-1"));
+				}
 				//---
 				if(!checkOrderByTicket(ot, CHK_TYLESS, "", MN, 1)) continue; // значит ордер не рыночный или не с нашим магиком
 				//---
 				int opt = getParentByTicket(ot); // получим тикет родителя для тек. ордера
 				if(opt != co_pt) continue; // родители у тек. ордера и проверяемого ордера - различны.
+				if(owty != 2 && owty != 3) continue; //проверим чтоб ордер был лимитным в прошлом.
 			//================
 			res = true; // это рыночный ордер нашей сетки!!!!
 			break;
