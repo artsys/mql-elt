@@ -2,7 +2,7 @@
 //|                                                libOrdersFunc.mq4 |
 //|                      Copyright © 2011, Morochin <artamir> Artiom |
 //|               http://forexmd.ucoz.org  e-mail: artamir@yandex.ru |
-//|												 ver. 1.0 20110627_12|
+//|												 ver. 1.0 20110704_14|
 //+------------------------------------------------------------------+
 #property copyright "Copyright © 2011, Morochin <artamir> Artiom"
 #property link      "http://forexmd.ucoz.org  e-mail: artamir@yandex.ru"
@@ -151,6 +151,18 @@ bool  isParentOrder(int ticket, int magic, string sy = ""){
 }
 //======================================================================
 
+/*///===================================================================
+	Версия: 2011.07.04
+	---------------------
+	Описание:
+		проверяет, является ли ордер первым.
+	---------------------
+	Доп. функции:
+		нет
+	---------------------
+	Переменные:
+		ticket - тикет проверяемого ордера
+/*///-------------------------------------------------------------------
 bool isFirstOrder(int ticket, int magic, string sy = ""){
 	bool res = false;
 		if(sy == "") sy = Symbol();
@@ -161,7 +173,7 @@ bool isFirstOrder(int ticket, int magic, string sy = ""){
 			//---
 			if(OrderSymbol() != sy) return(false);
 			//---
-			if(returnComment(OrderComment(),"@p") != "-1") return(false);
+			if(StringFind(returnComment(OrderComment(),"@p"),"-1")) return(true);
 		//---
 	return(res);
 }
