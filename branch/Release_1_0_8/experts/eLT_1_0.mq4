@@ -1344,7 +1344,7 @@ return(0);
 //======================================================================
 
 /*///===================================================================
-	Версия: 2011.04.10
+	Версия: 2011.07.04
 	---------------------
 	Описание:
 		пробегаемся по рыночным выставленным ордерам
@@ -1367,8 +1367,12 @@ void delPendingOrders(){
 			int 	oty		= OrderType();
 			string 	ocomm 	= OrderComment();
 			//---
+				if(!isExpertOrder(ot)){
+					continue;
+				}
+				//---
 				if(StrToInteger(returnComment(ocomm,"@p")) == -1){
-					if(isParentOrder(ot, MN, Symbol()) && isFirstOrder(ot, MN, Symbol())) continue;
+					if(isParentOrder(ot, MN, Symbol()) || isFirstOrder(ot, MN, Symbol())) continue;
 				}
 				if(!checkOrderByTicket(ot, CHK_TYMORE, Symbol(), MN, 2)) continue;
 				//---
