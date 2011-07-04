@@ -2,7 +2,7 @@
 //|                                                libOrdersFunc.mq4 |
 //|                      Copyright © 2011, Morochin <artamir> Artiom |
 //|               http://forexmd.ucoz.org  e-mail: artamir@yandex.ru |
-//|												 ver. 1.0 20110704_14|
+//|												 ver. 1.0 20110704_15|
 //+------------------------------------------------------------------+
 #property copyright "Copyright © 2011, Morochin <artamir> Artiom"
 #property link      "http://forexmd.ucoz.org  e-mail: artamir@yandex.ru"
@@ -173,7 +173,7 @@ bool isFirstOrder(int ticket, int magic, string sy = ""){
 			//---
 			if(OrderSymbol() != sy) return(false);
 			//---
-			if(StringFind(returnComment(OrderComment(),"@p"),"-1")) return(true);
+			if(StrToInteger(returnComment(OrderComment(),"@ip")) == 1) return(true);
 		//---
 	return(res);
 }
