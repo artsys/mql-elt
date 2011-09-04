@@ -626,6 +626,7 @@ bool ModifyOrder_TPSL_pip(int ticket, int tp_pip, int sl_pip, int magic){
 		}
 		
 }
+
 //======================================================================
 // если значение тп или сл < 0, тогда будет использоватьс€ соответствующее значение тп или сл ордера
 bool ModifyOrder_TPSL_price(int ticket, double tp_pr, double sl_pr, int magic){

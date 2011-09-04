@@ -1,6 +1,6 @@
 //+------------------------------------------------------------------+
 //|                                                          eLT.mq4 |
-//|                                                 ver 1.0.9.0704.15|
+//|                                                 ver 1.0.9.0713.16|
 //|                                         программирование artamir |
 //|                                                artamir@yandex.ru |
 //+------------------------------------------------------------------+
@@ -24,6 +24,8 @@
 				- Добавлена библиотека libCWT (canWeTrade)
 		[33]	- Изменения по этому багфиксу.	  
 				- Добавлен метод открытия родителя для лимитной сетки.
+	0711_23		+ добавлена библиотека libTralingStop
+	0713_16		- Исправлен баг расчета таргета уровня
 /*///=================================================================== 
 #property copyright "copyright (c) 2008-2011, Morochin <artamir> Artiom"
 #property link      "http://forexmd.ucoz.org, mailto: artamir@yandex.ru"
@@ -215,6 +217,7 @@ string	INIFile_grd			= ""	;	// ини файл объемов уровней сетки
 #include <libINIFileFunc.mqh>
 #include <libeLT.mqh>
 #include <libAutoOpen.mqh>
+#include <libTralingStop.mqh>
 //-------
 int initLibs(){
 /*
@@ -379,7 +382,10 @@ int getSL(int grid_level, int level){
 //======================================================================
 
 /*///===================================================================
-   Версия: 2011.04.22
+   Версия: 2011.07.13
+   ---------------------
+   История:
+		0713 - Исправлен баг с расчетом таргета уровня.
    ---------------------
    Описание:
       Возвращает текущее значение таргета в зависимости 
@@ -394,7 +400,7 @@ int getSL(int grid_level, int level){
 /*///-------------------------------------------------------------------
 int getTarget(int grid_level, int level){
 	
-	int trg = mgp_Target * level + (mgp_TargetPlus*level-1);
+	int trg = mgp_Target * level + (mgp_TargetPlus*(level-1));
 	
    // проверка на 1-й гридЛевел
       if(grid_level <= 1){
@@ -566,8 +572,6 @@ int fillLevelOrders(int& arr[], int parent_ticket, int level, int wt){
 		2011.06.09 - [+] Массив родительских ордеров, чтоб передать его дальше.
 /*///===================================================================
 void startCheckOrders(){
-//	Print("========================");
-//	Print("startCheckOrders    ");
 	double aParentOrders[1];
 	ArrayInitialize(aParentOrders,-1);
 	int dim = 0;
@@ -634,7 +638,6 @@ void startCheckOrders(){
 			}		
 		}
 	}
-//	Print("========================");
 	if(dim > 0)
 		checkParentOrder(aParentOrders);
 	else 
@@ -677,6 +680,7 @@ void startCheckOrders(){
    Изменения:
 		2011.04.08 - [+] Начал расчеты сл для ордеров уровней.
 		2011.06.08 - [+] Цикл по всем найденым родителям на тек. момент
+		2011.07.11 - [+] Добавлена проверка родителя на трейлинг
    ---------------------
    Доп. функции:
       нет
@@ -691,12 +695,8 @@ void checkParentOrder(double& aParentOrders[]){//int tekOrder){
 	for(int idx_PO = 0; idx_PO < dim; idx_PO++){
 		
 		int tekOrder = aParentOrders[idx_PO];
-		
-//		Print("==========================");
-//		Print("idx_PO = ",idx_PO);
-//		Print("tekOrder = ", tekOrder);
-//		Print("==========================");
-		
+		libTrSl_TralingSimple(tekOrder);
+	
 		double aLevels[][aL_AllTypes][aL_MAXSET]; // 1-е измерение оставили пустым для ресайза
 
 			//=================
@@ -757,8 +757,6 @@ void checkParentOrder(double& aParentOrders[]){//int tekOrder){
 				aLevels[0][0][idx_isMarket    ]  = 1;
 				aLevels[0][0][idx_ParentType  ]  = parent_type;
 				aLevels[0][0][idx_ticket      ]  = parent_ticket;
-				
-				//Print("maxLevels = ",maxaLevels);
 
 				for(int idx_L = 1; idx_L < maxaLevels; idx_L++){                     // цикл по уровням. Первый отложенный уровень = 1. 
 					// цикл  по типам ордеров >>>>>>>
@@ -998,21 +996,7 @@ void checkParentOrder(double& aParentOrders[]){//int tekOrder){
 					}//<<<< цикл  по типам ордеров         
 				}
 			
-		/*
-		for(idx_L = 0; idx_L <= 3; idx_L++){
-			for(idx_oty = 0; idx_oty < 10; idx_oty++){
-				Print("aLevels[",idx_L,"][",idx_oty,"][idx_price]= ",aLevels[idx_L][idx_oty][idx_price]);
-				Print("aLevels[",idx_L,"][",idx_oty,"][idx_vol]= ",aLevels[idx_L][idx_oty][idx_vol]);
-				Print("aLevels[",idx_L,"][",idx_oty,"][idx_volMarket]= ",aLevels[idx_L][idx_oty][idx_volMarket]);
-				Print("aLevels[",idx_L,"][",idx_oty,"][idx_volPending]= ",aLevels[idx_L][idx_oty][idx_volPending]);
-				Print("aLevels[",idx_L,"][",idx_oty,"][idx_isMarket]= ",aLevels[idx_L][idx_oty][idx_isMarket]);
-				Print("aLevels[",idx_L,"][",idx_oty,"][idx_ParentType]= ",aLevels[idx_L][idx_oty][idx_ParentType]);
-				Print("aLevels[",idx_L,"][",idx_oty,"][idx_send]= ",aLevels[idx_L][idx_oty][idx_send]);
-				Print("=============================================");
-				Sleep(100);
-			}
-		}
-		/***********************************************/
+		
 		/*///===================================================
 			3. Проверим какой уровень максимальный сработавщий для данного родителя.
 				3.1 в зависимости от макс. сработавшего уровня определяем тп сл для всех уровней  		
@@ -1020,7 +1004,6 @@ void checkParentOrder(double& aParentOrders[]){//int tekOrder){
 		
 		int maxMarketLevel = getMaxMarketLevel(aLevels); // уровни считаются с 0. 0 -родительский
 		
-		//Print("maxMarketLevel = ", maxMarketLevel);
 		//{--- в цикле по уровням проверим тп и сл для ордеров сетки
 			//	продумать алгоритм проверки на тп и сл.
 			//	и возможно, одновременное выставление недостающих ордеров.
@@ -1143,8 +1126,6 @@ void checkParentOrder(double& aParentOrders[]){//int tekOrder){
 										tp_pip = getTP(grid_level, idx_L);
 										
 										for(idx_ord = 0; idx_ord < dimLO; idx_ord++){
-											
-											//Print("aLevelOrders["+idx_ord+"] = ",aLevelOrders[idx_ord]);
 											
 											//======
 												if(!OrderSelect(aLevelOrders[idx_ord],SELECT_BY_TICKET)) continue;
@@ -1270,7 +1251,6 @@ void checkParentOrder(double& aParentOrders[]){//int tekOrder){
 										pending_comm = pending_comm+"@g"+grid_level+"@w"+idx_oty;
 										OrderSelect(parent_ticket, SELECT_BY_TICKET);
 										string openMethod = returnComment(OrderComment(),"@o");
-										Print("      openMethod = ",openMethod);
 										pending_comm	= pending_comm + "@o"+openMethod;
 									}
 								//}
@@ -1315,7 +1295,6 @@ void checkParentOrder(double& aParentOrders[]){//int tekOrder){
 									if(needSend == -1) continue;
 								//=====
 								double	needSendVol = calc_level_vol - (market_level_vol + pending_level_vol);
-								Print(pending_comm);
 								int	sendCount = TwisePending(needSendVol,	0,	TL_COUNT, TWISE_LOTS);
 								double	used_send_vol = 0;
 								for(int ord_count = 1; ord_count <= sendCount; ord_count++){
@@ -1416,7 +1395,6 @@ int res = 0;
 //{{-----------------------
 int start(){
 	res++;
-	//Print("========= START ===== ", res);
    if(!isDone){ 
       return(0); // если не закончена предыдущая ф-ция start(), тогда выходим
    }else{
@@ -1424,6 +1402,7 @@ int start(){
 	}
    //------
    libCO_closeByProfit();
+   
    startCheckOrders(); 
    delPendingOrders();
    //---
@@ -1467,7 +1446,6 @@ int start(){
 /**/
    Comment(strComm);
    isDone = true;
-   //Print("<<<<<, END ", res);
    return(0);
 }
 //========================}} 
