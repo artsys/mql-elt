@@ -1,8 +1,9 @@
-//+------------------------------------------------------------------+
-//|                                                  libHelpFunc.mq4 |
-//|                      Copyright © 2011, Morochin <artamir> Artiom |
-//|               http://forexmd.ucoz.org  e-mail: artamir@yandex.ru |
-//+------------------------------------------------------------------+
+/*///===================================================================
+		libHelpFunc.mqh
+		Copyright © 2011, Morochin <artamir> Artiom
+		http://forexmd.ucoz.org  e-mail: artamir@yandex.ru
+		Версия: 2011.12.14
+/*///===================================================================
 #property copyright "Copyright © 2011, Morochin <artamir> Artiom"
 #property link      "http://forexmd.ucoz.org  e-mail: artamir@yandex.ru"
 
@@ -253,6 +254,14 @@ void addInfo(string mess){
 
 //======================================================================
 
+
+void showComment(string strComm1="", string strComm2="", string strComm3="", string strComm4=""){
+	Comment(strComm1+"\n",
+					strComm2+"\n",
+					strComm3+"\n",
+					strComm4+"\n");
+}
+
 //+----------------------------------------------------------------------------+
 //|  Автор    : Ким Игорь В. aka KimIV,  http://www.kimiv.ru                   |
 //+----------------------------------------------------------------------------+
@@ -429,11 +438,12 @@ string ErrorDescription(int error_code)
       default:   error_string="unknown error";
      }
 //----
-   return(error_string);
+   return(error_code +" : "+ error_string);
   }
 
-  //+----------------------------------------------------------------------------|
+//+----------------------------------------------------------------------------|
 //|  Описание : Возвращает нормализованное значение торгуемого лота.           |
+//   Версия: 2011.11.18
 //+----------------------------------------------------------------------------+
 //|  Параметры:                                                                |
 //|    lo - нормализуемое значение лота.                                       |
@@ -449,13 +459,45 @@ double NormalizeLot(double lo, bool ro=False, string sy="") {
   double mx=MarketInfo(sy, MODE_MAXLOT);
 
   if (ml==0) ml=0.1;
-  if (mx==0) mx=100;
+  if (mx==0) mx=10000;
 
   if (ls>0) k=1/ls; else k=1/ml;
   if (ro) l=MathCeil(lo*k)/k; else l=MathFloor(lo*k)/k;
 
   if (l<ml) l=ml;
   if (l>mx) l=mx;
-
   return(l);
+}
+
+string getStrPeriod(int p){
+   string res = "";
+   if(p == 1)
+      return("M1 := ");
+   else
+      if(p == 5)
+         return("M5 := ");
+      else   
+         if(p == 15)
+            return("M15:= ");
+         else
+            if(p == 30)
+               return("M30:= ");
+            else
+               if(p == 60)
+                  return("H1 := ");
+               else
+                  if(p == 240)
+                     return("H4 := ");
+                  else
+                     if(p == 1440)
+                        return("D1 := ");
+                     else
+                        if(p == 10080)
+                           return("W1 := ");
+                        else
+                           if(p == 43200)
+                              return("MN := ");
+                           else
+                              if(p == 0)
+                                 return(getStrPeriod(Period()));
 }

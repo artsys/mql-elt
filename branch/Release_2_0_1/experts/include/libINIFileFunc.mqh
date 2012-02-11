@@ -104,7 +104,7 @@ string returnComment(string comm, string rejim = ""){
 }
 
 /*///===================================================================
-	Версия: 2011.06.27
+	Версия: 2011.07.25
 	---------------------
 	Описание:
 		добавляет описание ордера в файл ордеров
@@ -122,14 +122,33 @@ void addRecordInFileOrders(string filename,	string file_comm){
 	int parent = StrToInteger(returnComment(file_comm,"@p"));
 	int wasType = StrToInteger(returnComment(file_comm,"@w"));
 	int isParent = StrToInteger(returnComment(file_comm,"@ip"));
-	string openMethod = returnComment(file_comm,"@o");
-	Print("     openMethod = ",openMethod);
-	WriteIniString(filename, ticket, "isParent", isParent);
+	int step = StrToInteger(returnComment(file_comm,"@s"));
+	
+	int x = WriteIniString(filename, ticket, "isParent", isParent);
 	WriteIniString(filename, ticket, "grid", grid);
 	WriteIniString(filename, ticket, "level", level);
 	WriteIniString(filename, ticket, "parent", parent);
 	WriteIniString(filename, ticket, "wasType", wasType);
-	WriteIniString(filename, ticket, "openMethod", openMethod);
+	WriteIniString(filename, ticket, "step", step);
+}
+//======================================================================
+
+/*///===================================================================
+	Версия: 2011.06.26
+	---------------------
+	Описание:
+		Возвращает значение параметра из заданного файла
+	---------------------
+	Доп. функции:
+		нет
+	---------------------
+	Переменные:
+		filename
+		section
+		param
+/*///-------------------------------------------------------------------
+string libINIFF_ReadParam(string filename, string section, string param){
+	
 }
 //======================================================================
 

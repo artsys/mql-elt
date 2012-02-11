@@ -1,14 +1,16 @@
-//+------------------------------------------------------------------+
-//|                                                libOrdersFunc.mq4 |
-//|                      Copyright © 2011, Morochin <artamir> Artiom |
-//|               http://forexmd.ucoz.org  e-mail: artamir@yandex.ru |
-//|												 ver. 1.0 20110704_15|
-//+------------------------------------------------------------------+
+/*///===================================================================
+	Ver:2012.02.12_0.0.23
+	libOrdersFunc.mq4 
+	Copyright © 2012, Morochin <artamir> Artiom 
+	http://forexmd.ucoz.org  e-mail: artamir@yandex.ru 
+/*///===================================================================
+
 #property copyright "Copyright © 2011, Morochin <artamir> Artiom"
 #property link      "http://forexmd.ucoz.org  e-mail: artamir@yandex.ru"
 
+
 /*///===================================================================
-   Версия: 2011.03.24
+   Ver:2011.03.24_0.0.01
    ---------------------
    Описание:
       инициализация констант
@@ -45,21 +47,76 @@ bool libOrdersFunc_isThisOrderLive(int ticket){
 }
 
 /*///==================================================================
-// Версия: 2011.03.24
-//---------------------
-// Описание:
-// Возвращает версию библиотеки помощи :)
-//---------------------
-// Переменные:
-//    нет
+	Ver:2011.03.24_0.0.01
+	---------------------
+	Описание:
+	Возвращает версию библиотеки помощи :)
+	---------------------
+	Переменные:
+	    нет
 /*///-------------------------------------------------------------------
 string libOrders_Ver(){
    return("v1.0");
 }
 //======================================================================
 
-//===================================================
-//v2
+/*///===================================================================
+	Ver:2011.09.29_0.0.01
+	---------------------
+	Описание: Возвращает рыночный объем с поправкой на магик и символ.
+						А может и сетку(надо обдумать)
+
+	---------------------
+	Доп. функции:
+		нет
+	---------------------
+	Переменные:
+		sy			= строка названия инструмента. "" - текущий символ.
+		type		= ордера кокого типа будем выбирать для определения объема. 
+							-1 = любого типа.
+		magic		= фильтр по магику ордера.
+							-1 = все магики.
+		ticket	= тикет ордера, по которому определяем сетку. Это для случая, если у нас советник
+							обрабатывает несколько родителей одновременно.
+							-1 = обрабатывать все ордера символа.
+/*///-------------------------------------------------------------------
+double libOF_getMarketLots(string sy = "", int type = -1, int magic = -1, int ticket = -1){
+	double res = 0;
+		//---
+		if(sy == ""){
+			sy = Symbol();
+		}
+		
+		int t = OrdersTotal();
+		for(int i = t; i >= 0; i--){
+			//---
+				if(!OrderSelect(i, SELECT_BY_POS, MODE_TRADES)) continue;
+			//---
+				int			ti = OrderTicket();
+				int			ty = OrderType();
+				int			ma = OrderMagicNumber();
+				double	lo = OrderLots();
+				string	co = OrderComment();
+				//---
+				int ochk_type = CHK_SMB;
+				if(magic > -1) ochk_type = CHK_MN;
+				if(type > -1) ochk_type = CHK_TYEQ;
+				
+				if(!checkOrderByTicket(ti, ochk_type, sy, iif(magic <0,0,magic), type)) continue;
+				
+				res = res + lo;
+		}
+		//{--- Подготовим настройки для проверки ордера.
+			
+		//}
+		//---
+	return(res);
+}
+//======================================================================
+
+
+/*///===================================================
+	Ver:2012.02.12_0.2.01
 //+----------------------------------------------------------------------------+
 //    Автор    : Морокин Артём ака artamir <artamir@yandex.ru>
 //+----------------------------------------------------------------------------+
@@ -75,8 +132,8 @@ string libOrders_Ver(){
 //    На выходе:
 //       в зависимости от режима
 //+----------------------------------------------------------------------------+
-double TwisePending(double nlot,double ulot,int rejim, double TL)
-{
+/*///===================================================
+double TwisePending(double nlot,double ulot,int rejim, double TL){
    double delta = nlot - ulot;
    //---
    if(delta <= 0) return(-1);
@@ -96,6 +153,25 @@ double TwisePending(double nlot,double ulot,int rejim, double TL)
 }
 
 //=======================================================
+
+/*///===================================================================
+	Версия: 2011.12.12
+	Описание: возвращает количество пунктов пройденых ценой от ордера.
+/*///===================================================================
+
+	int libOF_fgetPipFromOrder(int ticket){
+		if(!OrderSelect(ticket, SELECT_BY_TICKET)) return(-10000);
+		
+		if(OrderType() == OP_BUY || OrderType() == OP_BUYLIMIT || OrderType() == OP_SELLSTOP){
+			return((Bid-OrderOpenPrice())/Point);
+		}
+		//---
+		if(OrderType() == OP_SELL || OrderType() == OP_SELLLIMIT || OrderType() == OP_BUYSTOP){
+			return((OrderOpenPrice() - Ask)/Point);
+		}
+	}
+
+//----------------------------------------------------------------------
 
 /*///===================================================================
    Версия: 2011.05.26
@@ -135,9 +211,6 @@ bool  isParentOrder(int ticket, int magic, string sy = ""){
    int isParent = StrToInteger(ReadIniString(file_ord, ticket, "isParent", "-1"));
    //----
    if(isParent == -1){
- //       Print(OrderComment());
- //       Print(StrToInteger(returnComment(OrderComment(),"@p")));
- //       Print(StrToInteger(returnComment(OrderComment(),"@ip")));
    
       if(StrToInteger(returnComment(OrderComment(),"@p")) == -1	|| 
 			StrToInteger(returnComment(OrderComment(),"@ip")) > -1) /*	||
@@ -280,7 +353,7 @@ int getParentInHistory(int ticket){
 //======================================================================
 
 /*///===================================================================
-   Версия: 2011.03.30
+   Ver:2011.03.30_0.0.01
    ---------------------
    Описание:
       возвращает родительский тикет для текущего ордера
@@ -309,7 +382,7 @@ int getParentByTicket(int ticket){
 //======================================================================
 
 /*///===================================================================
-    Версия: 2011.03.30
+    Ver:2011.03.30_0.0.01
     ---------------------
     Описание:
         возвращает, какой тип операции был у 
@@ -337,7 +410,7 @@ int getWasType(int ticket){
 //======================================================================
 
 /*///===================================================================
-   Версия: 2011.03.24
+   Ver:2011.03.24_0.0.01
    ---------------------
    Описание:
       проверяет ордер по заданным параметрам
@@ -365,26 +438,25 @@ bool checkOrderByTicket(int ticket, int ORD_CHK, string sy="", int magic=0, int 
 				//----
 				if(ORD_CHK == CHK_TYMORE){
 					if(OrderType() < ty)             return(false);
-				}//if(ORD_CHK <= CHK_TYMORE){
+				}//if(ORD_CHK <= CHK_TYMORE)
 				//----
 				if(ORD_CHK == CHK_TYLESS){
 					if(OrderType() > ty)             return(false);
-				}//if(ORD_CHK <= CHK_TYLESS){
+				}//if(ORD_CHK <= CHK_TYLESS)
 				//----
 				if(ORD_CHK == CHK_TYEQ){
 					if(OrderType() != ty)            return(false);
-				}//if(ORD_CHK <= CHK_TYEQ){
+				}//if(ORD_CHK <= CHK_TYEQ)
 				//----
-			}//if(ORD_CHK <= CHK_MN){   
+			}//if(ORD_CHK <= CHK_MN)
 			//-----
-		}//}} if(ORD_CHK <= CHK_SMB){   
-   //==================
+		}// if(ORD_CHK <= CHK_SMB)   
    return(true);  // прошли проверку, вернем ТРУ
 }
 //======================================================================
 
 /*///===================================================================
-   Версия: 2011.03.24
+   Ver:2011.08.29_0.0.01
    ---------------------
    Описание:
       проверяет ордер по заданным параметрам
@@ -418,6 +490,10 @@ bool checkOrderByTicket(int ticket, int ORD_CHK, string sy="", int magic=0, int 
 				}
 				//---
 				if(returnComment(OrderComment(),spar) != vpar) continue;
+				//---
+				if(ty > -1){
+					if(OrderType() != ty) continue;
+				}
 			//=======	
 			return(true);
 		}
@@ -427,7 +503,47 @@ bool checkOrderByTicket(int ticket, int ORD_CHK, string sy="", int magic=0, int 
 
 
 /*///===================================================================
-   Версия: 2011.03.24
+	Ver:2012.02.11_0.0.02
+	---------------------
+	Описание:
+		Собирает профит по всем открытым ордерам
+	-----------------------------------------
+	ДОПИСАТЬ!!!!!!!!!!!!
+	---------------------
+	Доп. функции:
+		нет
+	---------------------
+	Переменные:
+		sy		= валютная пара(опционально)
+		magic	= магик номер
+/*///-------------------------------------------------------------------
+double libFO_getProfit(string sy="", int magic = 0, int type = -1){
+	double res = 0;
+	//---
+	if(sy == ""){
+		sy = Symbol();
+	}
+		int lTotal = OrdersTotal();
+		for(int idx_ord = lTotal; idx_ord >= 0; idx_ord--){
+			if(!OrderSelect(idx_ord, SELECT_BY_POS, MODE_TRADES)) continue;
+			//---
+			int lO_ti = OrderTicket();
+			int lO_ty = OrderType();
+			double lO_Profit = OrderProfit();
+			if(type == -1)
+				if(!checkOrderByTicket(lO_ti, CHK_TYLESS, sy, MN, 2)) continue; //проверяем, если ордер типа < 2 (т.е. рыночный)
+			else{
+				if(!checkOrderByTicket(lO_ti, CHK_TYEQ, sy, MN, type)) continue; //проверяем, если ордер типа <> заданному (т.е. рыночный)
+			}
+				
+			//---
+			res = res + lO_Profit;
+		}
+	return(res);
+}
+
+/*///===================================================================
+   Ver:2011.03.24_0.0.01
    ---------------------
    Описание:
       Запрос на открытие рыночного ордера с выставлением тп и сл в пунктах 
@@ -440,24 +556,13 @@ bool checkOrderByTicket(int ticket, int ORD_CHK, string sy="", int magic=0, int 
       
 
 /*///-------------------------------------------------------------------
-int OpenMarketSLTP_pip(	string		sy		=	""		,
-						int			cmd		=	-1		,
-						double		lot		=	0		,
-						double		pr		=	0		,
-						int			sl_pip	=	0		,
-						int			tp_pip	=	0		,
-						string		comm	=	""		,
-						int			MN		=	0		,
-						datetime	exp		=	0		,
-						color		cl		=	CLR_NONE){
-						
-	
-   int res = _OrderSend(sy, cmd, lot, pr, 0, 0, 0, comm, MN, exp, "libOrderFunc: OpenMarketSLTP_pip");
-   //============
-   if(res > -1){
-      OrderSelect(res, SELECT_BY_TICKET);
-             pr = OrderOpenPrice();
-			 if(sl_pip > 0)
+int OpenMarketSLTP_pip(	string	sy	=	"",	int	cmd	=	-1, double	lot	=	0, double	pr	=	0, int	sl_pip	=	0, int	tp_pip	=	0, string	comm	=	"", int	MN	=	0,	datetime	exp	=	0, color	cl	=	CLR_NONE){	
+	int res = _OrderSend(sy, cmd, lot, pr, 0, 0, 0, comm, MN, exp, "libOrderFunc: OpenMarketSLTP_pip");
+  //============
+  if(res > -1){
+			OrderSelect(res, SELECT_BY_TICKET);
+			pr = OrderOpenPrice();
+			if(sl_pip > 0)
 				double sl = pr + iif(cmd == OP_BUY,-1,1) * sl_pip*Point;
 			else
 				sl = 0;
@@ -471,14 +576,14 @@ int OpenMarketSLTP_pip(	string		sy		=	""		,
          return(res);   
       else              // заглушка на случай неудачной модификации ордера
          return(res);         
-   }else{
-      return(-1);     
-   }//}}if(res > -1){   
+	}else{
+		return(-1);     
+	}//}}if(res > -1){   
 } 
 //======================================================================
 
 /*///===================================================================
-   Версия: 2011.06.28
+   Ver:2011.06.28_0.0.01
    ---------------------
    Изменения:	Добавлена переменная pr_from
 				Переменная pr заменена на pr_pip
@@ -499,19 +604,17 @@ int OpenMarketSLTP_pip(	string		sy		=	""		,
 
 /*///-------------------------------------------------------------------
 int OpenPendingPRSLTP_pip(	string		sy		=	""			, 
-							int			cmd		=	-1			, 
-							double		lot		=	0			, 
-							double		pr_from	=	0			, 
-							double		pr_pip	=	0			, 
-							int			sl_pip	=	0			, 
-							int			tp_pip	=	0			, 
-							string		comm	=	""			, 
-							int			magic	=	0			, 
-							datetime	exp		=	0			, 
-							color		cl		=	CLR_NONE	){
+															int			cmd		=	-1			, 
+															double		lot		=	0			, 
+															double		pr_from	=	0			, 
+															double		pr_pip	=	0			, 
+															int			sl_pip	=	0			, 
+															int			tp_pip	=	0			, 
+															string		comm	=	""			, 
+															int			magic	=	0			, 
+															datetime	exp		=	0			, 
+															color		cl		=	CLR_NONE	){
    
-   Print("pr_from = ",pr_from);
-   Print("pr_pip = ",pr_pip);
    
    if(sy == ""){
       sy = Symbol();
@@ -530,9 +633,7 @@ int OpenPendingPRSLTP_pip(	string		sy		=	""			,
    if(res > -1){
       OrderSelect(res, SELECT_BY_TICKET);
              pending_pr = OrderOpenPrice();
-              //double need_sl = pending_pr - orderDirection(cmd,OP_SLTP) * sl_pip*Point;
-              //ouble need_tp = pending_pr + orderDirection(cmd,OP_SLTP) * tp_pip*Point;
-      
+       
       if( ModifyOrder_TPSL_pip( res, tp_pip, sl_pip, MN))
          return(res);   
       else              // заглушка на случай неудачной модификации ордера
@@ -544,7 +645,7 @@ int OpenPendingPRSLTP_pip(	string		sy		=	""			,
 //======================================================================
 
 /*///===================================================================
-	Версия: 2011.04.02
+	Ver:2011.04.02_0.0.01
 	---------------------
 	Описание:
 		Модифицирует тп и сл (опционально) ордера
@@ -626,13 +727,80 @@ bool ModifyOrder_TPSL_pip(int ticket, int tp_pip, int sl_pip, int magic){
 		}
 		
 }
-
 //======================================================================
+
+/*///===================================================================
+	Ver:2011.12.12_0.0.01
+	---------------------
+	Описание:
+		Модифицирует цену (опционально) ордера.
+		на заданное количество пунктов
+	---------------------
+	Доп. функции:
+		._OrderModify()
+	---------------------
+	Переменные:
+		ticket
+		pr_pip
+		magic
+/*///-------------------------------------------------------------------
+bool libOF_ModifyOrder_PR_pip(int ticket, int pr_pip, int magic){
+	
+	bool res = false;
+
+	if(!OrderSelect(ticket, SELECT_BY_TICKET)) return(false);
+	//======
+	if(OrderCloseTime() > 0){
+		addInfo("libOF_ModifyOrder_PR_pip: "+"Order: "+ticket+" is CLOSED!!!!");
+		return(false);
+	}
+	//----
+		double oop = NormalizeDouble(OrderOpenPrice(), 	Digits);
+		double otp = NormalizeDouble(OrderTakeProfit(), Digits);
+		double osl = NormalizeDouble(OrderStopLoss(),	Digits);
+		//---
+		double calc_pr = 0;
+		
+		if(pr_pip == 0){
+			calc_pr = oop;
+		}
+		
+		//---
+		if(OrderType() == OP_BUY || OrderType() == OP_SELLSTOP || OrderType() == OP_BUYLIMIT){
+			if(pr_pip > 0)
+				calc_pr = (oop + pr_pip*Point);
+			else
+				if(pr_pip < 0)
+					calc_pr = (oop - pr_pip*Point);
+			//---
+		}
+		//---
+		if(OrderType() == OP_SELL || OrderType() == OP_BUYSTOP || OrderType() == OP_SELLLIMIT){
+			if(pr_pip > 0)
+				calc_pr = (oop - pr_pip*Point);
+			else
+				if(pr_pip < 0)
+					calc_pr = (oop + pr_pip*Point);
+			//---	
+		}
+		//---
+		calc_pr = NormalizeDouble(calc_pr, Digits);
+		//---
+		if(calc_pr == oop){
+			return(true);
+		}else{
+			res = _OrderModify(ticket, calc_pr, -1, -1, magic, -1, CLR_NONE);
+			return(res);
+		}
+		
+}
+//======================================================================
+
+
 // если значение тп или сл < 0, тогда будет использоваться соответствующее значение тп или сл ордера
 bool ModifyOrder_TPSL_price(int ticket, double tp_pr, double sl_pr, int magic){
 	
 	bool res = false;
-    //Print("ModifyOrder_TPSL_price("+ticket+", "+tp_pr+","+ sl_pr+", "+magic+")");
 	if(!OrderSelect(ticket, SELECT_BY_TICKET)) return(false);
 	//======
 	if(OrderCloseTime() > 0){
@@ -666,32 +834,37 @@ bool ModifyOrder_TPSL_price(int ticket, double tp_pr, double sl_pr, int magic){
 //+------------------------------------------------------------------+
 //удаляем отложенник
 //+------------------------------------------------------------------+
-bool delPendingByTicket(int ticket){
+bool delPendingByTicket(int ticket, string fn = ""){
    bool res = false;
    int  ntry = 0;
    int tryCount = 5;
    
-   if(!IsTradeAllowed()) return(false);
+	if(!IsTradeAllowed()) return(false);
    
-   if(OrderSelect(ticket,SELECT_BY_TICKET)){      //выбрали ордер
-      if(OrderCloseTime() > 0) return(true);     //проверили, чтоб он не был закрыт или удален
-      while(IsTradeContextBusy()){                //пока занят торговый поток 
-            Sleep(3000);                          //спим 3 сек.
-      }
-      //---
-      while(!res && ntry <= tryCount){
-         res = OrderDelete(ticket,CLR_NONE);
-         ntry++;
-      }
-      //---
-      int err = GetLastError();
-      if(!res){
-         logError("delPending",StringConcatenate("tick = ",ticket),err);
-      }
-         
-      return(res);
-   }else
-      return(true);
+	if(OrderSelect(ticket,SELECT_BY_TICKET)){      //выбрали ордер
+		if(OrderCloseTime() > 0) return(true);     //проверили, чтоб он не был закрыт или удален
+		while(IsTradeContextBusy()){                //пока занят торговый поток 
+			Sleep(3000);                          //спим 3 сек.
+		}
+    //---
+    while(!res && ntry <= tryCount){
+			res = OrderDelete(ticket,CLR_NONE);
+      ntry++;
+    }
+    //---
+    int err = GetLastError();
+    if(!res){
+			logError("delPending",StringConcatenate("tick = ",ticket),err);
+    }
+		
+		if(fn != ""){
+			logInfo("del Pending ->"+fn);	
+		}
+			
+		return(res);
+	}else{
+		return(true);
+	}		
 }
 //=======================================================================
 
@@ -701,7 +874,7 @@ bool delPendingByTicket(int ticket){
 //{
       
 /*///===================================================================
-   Версия: 2011.03.24
+	Ver:2012.02.12_0.0.02
    ---------------------
    Описание:
       Запрос на открытие позиции
@@ -724,107 +897,109 @@ int _OrderSend(string    _symbol,
                   string _comment, 
                   int    _magic, 
                   int    _exp, string fn = ""){
-   /*
-   symbol   -   Наименование финансового инструмента, с которым проводится торговая операция. 
-   cmd   -   Торговая операция. Может быть любым из значений торговых операций.  
-   volume   -   Количество лотов. 
-   price   -   Цена открытия. 
-   slippage   -   Максимально допустимое отклонение цены для рыночных ордеров (ордеров на покупку или продажу). 
-   stoploss   -   Цена закрытия позиции при достижении уровня убыточности (0 в случае отсутствия уровня убыточности). 
-   takeprofit   -   Цена закрытия позиции при достижении уровня прибыльности (0 в случае отсутствия уровня прибыльности). 
-   comment   -   Текст комментария ордера. Последняя часть комментария может быть изменена торговым сервером.  
-   magic   -   Магическое число ордера. Может использоваться как определяемый пользователем идентификатор. 
-   expiration   -   Срок истечения отложенного ордера. 
-   arrow_color   -   Цвет открывающей стрелки на графике. Если параметр отсутствует или его значение равно CLR_NONE, то открывающая стрелка не отображается на графике. 
-   
-   если price == 0 тогда открываем по текущей цене
-   */
-   
-   
-   int res        = -1;
-   int countOfTry = 5;
-   int nTry       = 0;
-   
-   int sltpLevel = MarketInfo(Symbol(),MODE_STOPLEVEL);
- 
-   
-   
-   while(      res   <   0                && nTry  <=  countOfTry 
-                     &&  !IsStopped()     &&           IsTradeAllowed()){
-      
-      //---            
-      if(!IsExpertEnabled()) break;
-      //---
-      
-      if(_cmd <= 1 && _price <= 0){
-         _price = iif(_cmd == OP_BUY, MarketInfo(Symbol(), MODE_ASK), MarketInfo(Symbol(), MODE_BID));
-      }
-      //---
-      if(_price > 0 ){
-         if(_cmd == OP_BUYSTOP || _cmd == OP_SELLLIMIT){
-            if(_price < (MarketInfo(Symbol(),MODE_ASK) + sltpLevel  *  Point)){
-               logInfo(StringConcatenate("cant open ", "ot = ",_cmd, " op = ",_price," fn = ",fn),"libOrderFunc : _OrderSend");
-               return(-1);
-            }
-         }
-         //***
-         if(_cmd == OP_SELLSTOP || _cmd == OP_BUYLIMIT){
-            if(_price > (MarketInfo(Symbol(),MODE_BID) - sltpLevel  *  Point)){
-              logInfo(StringConcatenate("cant open ", "ot = ",_cmd, " op = ",_price," fn = ",fn),"libOrderFunc : _OrderSend");
-               return(-1);
-            }
-         }
-      }
-      
-      //нормализуем все переменные зависящие от цены
-      _price      = NormalizeDouble(_price,      Digits);  
-      _stoploss   = NormalizeDouble(_stoploss,   Digits);
-      _takeprofit = NormalizeDouble(_takeprofit, Digits);
-              
-      res = OrderSend(_symbol, _cmd, _volume, _price, _sleepage, 0, 0, _comment, _magic, _exp, CLR_NONE);
-      
-      logInfo(StringConcatenate("OpenOrder = ",res," sender -> ",fn), "libOrderFunc : _OrderSend");
-      
-      if(res > -1 && (_stoploss > 0 || _takeprofit > 0)){
-         if(_OrderModify(res,-1,_stoploss,_takeprofit,_magic,_exp,CLR_NONE,"_OrderSend"))
-            return(res);   
-      }   
-      //---
-      int err = GetLastError();
-      if(err > 0)
-      {
-         if(err == 4109){
-            logInfo("TRADE IS DISABLED!!!!", "");
-            addInfo("TRADE IS DISABLED!!!!");
-            return(-1);
-         }   
-            
-         if(err == 4051)
-            break;   
-         //logInfo(_price);
-         if(err == 148){
-            logInfo("BROCKER MAX ORDERS!!!!!", "");
-            addInfo("BROCKER MAX ORDERS!!!!!");
-            return(-1);
-         }
-         
-         if(err == 130){
-            logInfo(StringConcatenate("sl = ",_stoploss," tp = ",_takeprofit), "");
-            return(-1);
-         }
-         logError("OpenOrder",StringConcatenate("OrderSendError, fn = ",fn),err);
-         logInfo(StringConcatenate("Price = ",_price," cmd = ",_cmd, " bid = ", Bid, " ask = ", Ask), "");
-      }
-      
-      nTry++;
-   }
-   
-return(res);   
+	/*
+		symbol   -   Наименование финансового инструмента, с которым проводится торговая операция. 
+		cmd   -   Торговая операция. Может быть любым из значений торговых операций.  
+		volume   -   Количество лотов. 
+		price   -   Цена открытия. 
+		slippage   -   Максимально допустимое отклонение цены для рыночных ордеров (ордеров на покупку или продажу). 
+		stoploss   -   Цена закрытия позиции при достижении уровня убыточности (0 в случае отсутствия уровня убыточности). 
+		takeprofit   -   Цена закрытия позиции при достижении уровня прибыльности (0 в случае отсутствия уровня прибыльности). 
+		comment   -   Текст комментария ордера. Последняя часть комментария может быть изменена торговым сервером.  
+		magic   -   Магическое число ордера. Может использоваться как определяемый пользователем идентификатор. 
+		expiration   -   Срок истечения отложенного ордера. 
+		arrow_color   -   Цвет открывающей стрелки на графике. Если параметр отсутствует или его значение равно CLR_NONE, то открывающая стрелка не отображается на графике. 
+		
+		если price == 0 тогда открываем по текущей цене
+	*/
+
+
+	int res        = -1;
+	int countOfTry = 5;
+	int nTry       = 0;
+
+	int sltpLevel = MarketInfo(Symbol(),MODE_STOPLEVEL);
+
+
+	while(res<0	&& nTry <= countOfTry 
+				&& !IsStopped()
+				&& IsTradeAllowed()){
+		//---            
+		if(!IsExpertEnabled()) break;
+		//---
+		_volume = NormalizeLot(_volume, false, "");
+		//---
+		if(_cmd <= 1 && _price <= 0){
+			_price = iif(_cmd == OP_BUY, MarketInfo(Symbol(), MODE_ASK), MarketInfo(Symbol(), MODE_BID));
+		}
+		//---
+		if(_price > 0 ){
+			if(_cmd == OP_BUYSTOP || _cmd == OP_SELLLIMIT){
+				if(_price < (MarketInfo(Symbol(),MODE_ASK) + sltpLevel * Point)){
+					logInfo(StringConcatenate("cant open ", "ot = ",_cmd, " op = ",_price," fn = ",fn),"libOrderFunc : _OrderSend");
+					return(-1);
+				}
+			}
+			//***
+			if(_cmd == OP_SELLSTOP || _cmd == OP_BUYLIMIT){
+				if(_price > (MarketInfo(Symbol(),MODE_BID) - sltpLevel  *  Point)){
+					logInfo(StringConcatenate("cant open ", "ot = ",_cmd, " op = ",_price," fn = ",fn),"libOrderFunc : _OrderSend");
+					return(-1);
+				}
+			}
+		}
+
+		//нормализуем все переменные зависящие от цены
+		_price      = NormalizeDouble(_price,      Digits);  
+		_stoploss   = NormalizeDouble(_stoploss,   Digits);
+		_takeprofit = NormalizeDouble(_takeprofit, Digits);
+
+		res = OrderSend(_symbol, _cmd, _volume, _price, _sleepage, 0, 0, _comment, _magic, _exp, CLR_NONE);
+
+		logInfo(StringConcatenate("OpenOrder = ",res," sender -> ",fn), "libOrderFunc : _OrderSend");
+
+		if(res > -1 && (_stoploss > 0 || _takeprofit > 0)){
+			if(_OrderModify(res,-1,_stoploss,_takeprofit,_magic,_exp,CLR_NONE,"_OrderSend")){
+				return(res);
+			}
+		}
+		//---
+		int err = GetLastError();
+		if(err > 0){
+			if(err == 4109){
+				logInfo("TRADE IS DISABLED!!!!", "");
+				addInfo("TRADE IS DISABLED!!!!");
+				return(-1);
+			}
+			//---
+			if(err == 4051){
+				break;
+			}
+			//logInfo(_price);
+			if(err == 148){
+				logInfo("BROCKER MAX ORDERS!!!!!", "");
+				addInfo("BROCKER MAX ORDERS!!!!!");
+				return(-1);
+			}
+			//---
+			if(err == 130){
+				logInfo(StringConcatenate("sl = ",_stoploss," tp = ",_takeprofit), "");
+				return(-1);
+			}
+			//---
+			logError("OpenOrder",StringConcatenate("OrderSendError, fn = ",fn),err);
+			logInfo(StringConcatenate("Price = ",_price," cmd = ",_cmd, " bid = ", Bid, " ask = ", Ask), "");
+		}
+
+		nTry++;
+	}
+
+	return(res);
 }
 //======================================================================
 
 /*///===================================================================
-   Версия: 2011.03.24
+   Ver:2011.03.24_0.0.01
    ---------------------
    Описание:
       Производит модификацию ценовых значений ордера
@@ -872,9 +1047,6 @@ bool _OrderModify( 	int 		ticket					,
       stoploss    = NormalizeDouble(stoploss,   Digits);
       takeprofit  = NormalizeDouble(takeprofit, Digits);      
    //-----
-   //Print("======================================");
-   //Print("otp = ", otp);
-   //Print("takeprofit = ", takeprofit);
    
    if(	NormalizeDouble(otp, Digits) == NormalizeDouble(takeprofit, Digits) && 
 		NormalizeDouble(osl, Digits) == NormalizeDouble(stoploss, Digits) && price < 0){

@@ -135,6 +135,7 @@ double  calcPrice(double parent_pr, int parent_type, int pip){
 /*///-------------------------------------------------------------------
 double  calcTPPrice(double pr, int type, int pip){
 	double calc_pr = 0;
+	
 	if(type == OP_BUY || type == OP_BUYSTOP || type == OP_BUYLIMIT){
 		calc_pr	=	NormalizeDouble(pr + pip*Point, Digits);
 	}else{
@@ -383,7 +384,7 @@ bool isGridLive(int ticket, int MN){
 //======================================================================
 
 /*///===================================================================
-	Версия: 2011.04.04
+	Версия: 2012.01.02
 	---------------------
 	Описание:
 		добавляет описание ордера в файл ордеров
@@ -395,19 +396,19 @@ bool isGridLive(int ticket, int MN){
 		нет
 /*///-------------------------------------------------------------------
 void libELT_addRecordInFileGrid(string filename,	string file_comm){
-	int ticket = StrToInteger(returnComment(file_comm,"@ot"));
-	int grid = StrToInteger(returnComment(file_comm,"@g"));
-	int level = StrToInteger(returnComment(file_comm,"@l"));
-	int parent = StrToInteger(returnComment(file_comm,"@p"));
-	int wasType = StrToInteger(returnComment(file_comm,"@w"));
-	int isParent = StrToInteger(returnComment(file_comm,"@ip"));
-	double level_lots = StrToDouble(returnComment(file_comm,"@wl"));
+	int			ticket			= StrToInteger(returnComment(file_comm,"@ot"));
+	int			grid				= StrToInteger(returnComment(file_comm,"@g" ));
+	int			level				= StrToInteger(returnComment(file_comm,"@l" ));
+	int			parent			= StrToInteger(returnComment(file_comm,"@p" ));
+	int 		wasType			= StrToInteger(returnComment(file_comm,"@w" ));
+	int 		isParent		= StrToInteger(returnComment(file_comm,"@ip"));
+	double	level_lots	= StrToDouble	(returnComment(file_comm,"@wl"));
+	int			leveltarget	= StrToInteger(returnComment(file_comm,"@lt"));
 	
-	string swasLots = ReadIniString(filename, parent, level, "0");
-	double dwasLots = StrToDouble(returnComment(swasLots,"@w"+wasType+"_lot_"));
+	string	swasLots		= ReadIniString(filename, parent, level, "0");
+	double	dwasLots		= StrToDouble(returnComment(swasLots,"@w"+wasType+"_lot_"));
 	
-	WriteIniString(filename, parent, level, "@w"+wasType+"_lot_"+DoubleToStr(dwasLots+level_lots,4));
+	WriteIniString(filename, parent, level, "@w"+wasType+"_lot_"+DoubleToStr(dwasLots+level_lots,4)+"@lt"+leveltarget);
 	
-	Print(filename);
 }
 //======================================================================

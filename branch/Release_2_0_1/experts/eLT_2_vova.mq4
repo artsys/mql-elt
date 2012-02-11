@@ -1,6 +1,6 @@
 //+------------------------------------------------------------------+
 //|                                                          eLT.mq4 |
-//|                                                 ver 1.0.9.0713.16|
+//|                                                 	 ver 2. vova |
 //|                                         программирование artamir |
 //|                                                artamir@yandex.ru |
 //+------------------------------------------------------------------+
@@ -26,12 +26,18 @@
 				- Добавлен метод открытия родителя для лимитной сетки.
 	0711_23		+ добавлена библиотека libTralingStop
 	0713_16		- Исправлен баг расчета таргета уровня
+	0910_23		- Отключил использование ТрейлингСтопа на родительском ордере
+	0913_17		- Перенес настройки Автолота в libAO
+	0202_15		* Изменен метод подключения модуля автооткрытия. теперь все алгоритмы подключаются 
+					в самом модуле
+	
+	1214_17		+ Добавлено Автооткрытие для Вовы.
 /*///=================================================================== 
 #property copyright "copyright (c) 2008-2011, Morochin <artamir> Artiom"
 #property link      "http://forexmd.ucoz.org, mailto: artamir@yandex.ru"
 
 /*///===================================================================
-   Версия: 2011.03.24
+   Ver: 2011.03.24
    ---------------------
    Описание:
       инициализация констант
@@ -51,44 +57,43 @@
 #define		CHK_TYLESS			300
 #define		CHK_TYEQ			200
 
-#define		EXP_NAME			"eLT_10"
+#define		EXP_NAME			"eLT_v2_vova"
+#define		EXP_Ver				"2.0.1 2012.02.02 15:40"
 
-#define  TL_COUNT		1	// TL - Twise lot
-#define  TL_VOL			2	// TL - Twise lot
+#define  TL_COUNT				1	// TL - Twise lot
+#define  TL_VOL					2	// TL - Twise lot
 
 //===================
 // Настройки массива уровней
+	#define		a_dINI				-1.00			// значение инициализации массива (доубл) 
 
-#define		a_dINI				-1.00	// значение инициализации массива (доубл) 
+	// размерность
+		#define		aL_MAXL						30		// 1-е измерение
+		#define		aL_MAXTY					10		// 2-е измерение 
+		#define		aL_AllTypes					21		// 2-е измерение 
+		#define		aL_MAXSET					12		// 3-е измерение
 
-// размерность
-#define		aL_MAXL				30			// 1-е измерение
-#define		aL_MAXTY			10			// 2-е измерение 
-#define		aL_AllTypes			21			// 2-е измерение 
-#define		aL_MAXSET			11			// 3-е измерение
+	//===================
+	// Типы добавочных ордеров
+		#define		OP_ADD_BUYLIMIT				6			// добавочный байлимит
+		#define		OP_ADD_SELLLIMIT			7			// добавочный селллимит
+		#define		OP_ADD_BUYSTOP				8			// добавочный байстоп
+		#define		OP_ADD_SELLSTOP				9			// добавочный селлстоп
 
-//===================
-// Типы добавочных ордеров
-#define		OP_ADD_BUYLIMIT		6			// добавочный байлимит
-#define		OP_ADD_SELLLIMIT	7			// добавочный селллимит
-#define		OP_ADD_BUYSTOP		8			// добавочный байстоп
-#define		OP_ADD_SELLSTOP		9			// добавочный селлстоп
+	#define		OP_LIMLEVEL			20		// определение для типа, который будет описывать лимитную сетку
 
-#define		OP_LIMLEVEL			20			// определение для типа, который будет описывать лимитную сетку
-
-#define		idx_price	    0
-#define		idx_vol     	1
-#define		idx_tp_pip     	2
-#define		idx_sl_pip      3
-#define     idx_ParentType  4
-#define		idx_isMarket    5
-#define		idx_send        6
-#define		idx_volMarket   7
-#define		idx_volPending  8
-#define		idx_gridLevel	9
-#define		idx_ticket		10
-
-
+	#define		idx_price	    				0
+	#define		idx_vol     					1
+	#define		idx_tp_pip     					2
+	#define		idx_sl_pip      				3
+	#define   	idx_ParentType	  				4
+	#define		idx_isMarket    				5
+	#define		idx_send        				6
+	#define		idx_volMarket   				7
+	#define		idx_volPending  				8
+	#define		idx_gridLevel					9
+	#define		idx_ticket						10
+	#define		idx_target						11
 
 //======================================================================
 
@@ -138,20 +143,12 @@ extern         double     		add_Stop_fixVol            = 0.1	;	// фиксированный 
 	// Соглашение: сетка для добавочного ордера расчитывается из настроек <mgp_> 								
 //}	
 
-//{--- auto lot																		
-extern   string AL_DESC = "=========== AUTO_LOT SETUP ==========";
-extern			double	al_LOT_fix           =    0.1				;	// фиксированный стартовый лот
-extern			bool	al_needAutoLots      =  false				;	// разрешает авторасчет объема родительского ордера
-                     bool    al_useMarginMethod      = true			;	// разрешает использовать метод залога
-extern               double  al_DepositPercent       =    1			;	// процент от депозита для расчета методом залога                     
-extern string MGP_END   = "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<";
-//}
+
 
 //{--- Стоповые ордера
 extern string SOP       = "===== STOP ORDERS PROP >>>>>>>>>>>>>>>";
 extern         bool     SO_useStopLevels		=    false			;	// разрешает советнику использовать выставление стоповых ордеров
 extern         int             SO_Levels				=  -1		;	// -1 - количество уровней совпадает с уровнями лимитных ордеров, либо задает количетво стоповых уровней
-
 extern         int             SO_StartLevel			=   2		;	// уровень, с которого выставляются стоповые ордера для данного родителя. Родительский ордер имеет индекс 1
 																		// т.е. в данном случае стоповые ордера будут выставляться с уровня первого лимитного ордера
 extern         bool            SO_useLimLevelVol		=	true	;	// разрешает использовать объем текущего уровня лимитной сетки для расчета объема стопового ордера
@@ -159,7 +156,6 @@ extern         bool            SO_useLimLevelVol		=	true	;	// разрешает использо
 extern         double          SO_LimLevelVol_Divide	=	-1		;	// деление объема лим. ордера для вычисления объема стоп. до уровня LevelVolParent
 																		// -1 выставляется объемом родительского      
 extern         int             SO_EndLevel				=   3		;	// Настройки <SO_useLimLevelVol> и <SO_LimLevelVol_Divide> будут использоваться до этого уровня включительно
-
 extern         int             SO_ContinueLevel			=   5		;	// Включая этот уровень и до SO_Levels будут продолжать выставляться стоповые ордера.
 extern         double          SO_ContLevelVol_Divide	=	1		;	// Для расчета используется расчетное значение объема лим. ордера текущего уровня.
 
@@ -183,8 +179,9 @@ extern int          FirstOrderDiapazonPip    = 75;  // диапазон, в котором выста
                                                     // если = 0, то рыночные по тек. цене
 extern int          FirstOrderExp            = 15;  // время жизни отложенного ордера в мин.                                               
 extern string    ex_END_OPEN_FIRST_ORDER  = "==================================================="; 
+
 /*///===================================================================
-   Версия: 2011.03.24
+   Ver: 2011.03.24
    ---------------------
    Описание:
       глобальные переменные
@@ -203,21 +200,27 @@ string  file_ord			= ""    ;   // дублирует INIFile_ord
 string	INIFile_grd			= ""	;	// ини файл объемов уровней сетки
 //======================================================================
 
+
+string strCommMain = "";
+string strCommBO = "";
+string strCommUPTOMA = "";
+string comm2 = "";
+
 /*///==============================================================
-      Версия: 2011.03.24
+      Ver: 2011.12.14
       ------------------
       Описание:
-         Инициализация и проверка версии библиотеки функций помощи
-         <libHelpFunc> 
+         Инициализация заголовков
 /*///--------------------------------------------------------------
+#include <libAutoLot.mqh>
 #include <libCWT.mqh>
 #include <libCloseOrders.mqh>
 #include <libHelpFunc.mqh>
 #include <libOrdersFunc.mqh>
 #include <libINIFileFunc.mqh>
 #include <libeLT.mqh>
-#include <libAutoOpen.mqh>
-#include <libTralingStop.mqh>
+#include <libAutoOpen_1.2.mqh>
+//#include <libTralingStop.mqh>
 //-------
 int initLibs(){
 /*
@@ -280,7 +283,7 @@ string logIni(string str_err, string fn=""){
 
 
 /*///===================================================================
-   Версия: 2011.04.22
+   Ver: 2011.04.22
    ---------------------
    Описание:
       Возвращает текущее значение тп в зависимости 
@@ -330,7 +333,7 @@ int getTP(int grid_level, int level){
 //======================================================================
 
 /*///===================================================================
-   Версия: 2011.06.28
+   Ver: 2011.06.28
    ---------------------
    Описание:
       Возвращает текущее значение sl в зависимости 
@@ -382,7 +385,7 @@ int getSL(int grid_level, int level){
 //======================================================================
 
 /*///===================================================================
-   Версия: 2011.07.13
+   Ver: 2011.07.13
    ---------------------
    История:
 		0713 - Исправлен баг с расчетом таргета уровня.
@@ -416,18 +419,18 @@ int getTarget(int grid_level, int level){
 			//    чтоб получить таргеты как для родительской сетки, нужно все коэф = 1;
 			// для фикса: возвращаем заданное в настройках значение
 			//---
-			if(SO_useKoefProp){
-				return(trg * MathPow(SO_Target, (grid_level-1)));
-			}else{
-				return(SO_Target*(level));
-			}      
+				if(SO_useKoefProp){
+					return(trg * MathPow(SO_Target, (grid_level-1)));
+				}else{
+					return(SO_Target*(level));
+				}      
       }
    //<<<<<<<
 }
 //======================================================================
 
 /*///===================================================================
-   Версия: 2011.06.27
+   Ver: 2011.06.27
    ---------------------
    Описание:
       возвращает максимальный рыночный уровень сетки      
@@ -452,7 +455,7 @@ int getMaxMarketLevel(double& arr[][][]){
 //======================================================================
 
 /*///===================================================================
-	Версия: 2011.04.08
+	Ver: 2011.04.08
 	---------------------
 	Описание:
 		Возвращает цену максимального уровня лимитной сетки.
@@ -474,7 +477,7 @@ double getMaxLimitLevelPrice(double& arr[][][], int parent_ticket = -1){
 
 
 /*///===================================================================
-   Версия: 2011.03.29
+   Ver: 2011.03.29
    ---------------------
    Описание:
       возвращает объем для текущего уровня лимитной сетки      
@@ -494,7 +497,7 @@ double calcLimitVol(double parent_vol, int level){
 //======================================================================
 
 /*///===================================================================
-	Версия: 2011.03.31
+	Ver: 2011.03.31
 	---------------------
 	Описание:
 		возвращает нормализованный объем для  
@@ -695,7 +698,7 @@ void checkParentOrder(double& aParentOrders[]){//int tekOrder){
 	for(int idx_PO = 0; idx_PO < dim; idx_PO++){
 		
 		int tekOrder = aParentOrders[idx_PO];
-		libTrSl_TralingSimple(tekOrder);
+		//libTrSl_TralingSimple(tekOrder);
 	
 		double aLevels[][aL_AllTypes][aL_MAXSET]; // 1-е измерение оставили пустым для ресайза
 
@@ -1392,7 +1395,7 @@ int deinit(){
 
 
 int res = 0;
-//{{-----------------------
+//{{--- START
 int start(){
 	res++;
    if(!isDone){ 
@@ -1410,45 +1413,55 @@ int start(){
 		OpenPendingOrders();
 	} 
 	//---
-	//********************************
-    //2010,09,09
-    //*******************************
-    if(libCWT_canWeTrade()){
-		if(libAO_needBarsOpen){
-            //delLimits();
-            //collapsArray();
-			libAO_BarOpen();
-        }
-    }
+	if(libCWT_canWeTrade()){
+			libAO_MAIN();
+	}
    //------
-   string strComm = StringConcatenate(
-         // "Circle time = ", (GetTickCount() - startCicle)/100," sec","\n",
-          "AB  = ", AccountBalance(),    "\n",
+	 
+
+	 string strComment = "\n\n";
+      if(libAO_UTL_needUpToLevel){
+         strComment = StringConcatenate(strComment,"UpToLevel = 1","\n");
+         //strComment = StringConcatenate(strComment,"filterStoh = ",UTL_filterStoh,"\n");   
+      }   
+      
+      if(libAO_UTM_needUpToMA){
+         strComment = StringConcatenate(strComment,"UpToMA = 1","\n");
+         //strComment = StringConcatenate(strComment,"filterStoh = ",UTM_filterStoh,"\n");   
+      }
+      
+              // strComment = StringConcatenate(strComment,"OpenStoh = 1","\n");
+         // strComment = StringConcatenate(strComment,"filterStoh = ",Stoh_filterStoh,"\n");   
+      // }
+	 
+			strCommMain = StringConcatenate(
+					strComment,
+					"AB  = ", AccountBalance(),    "\n",
           "AE  = ", AccountEquity(),     "\n",
           "M   = ", AccountMargin(),     "\n",
           "FM  = ", AccountFreeMargin(), "\n",
           "NO  = ", OrdersTotal(),       "\n");
-          /*"Lot = ", lot, "\n",
-          "opened Vol BUY  = ",getOpenedVolum(0),"\n",
-          "opened Vol SELL = ",getOpenedVolum(1),"\n\n",
-          "lastCrossMA     = ",lastCrossMA, "\n\n",
-          "max vol BUY     = ", maxVolBUY,"\n",
-          "max vol SELL    = ", maxVolSELL,"\n\n",
-          "max DroDown = ", maxDDPercent,"% \n",
-          "this DD     = ",dd,"% \n\n",
-          "Target = ", Target,  "\n",
-          "tp     = ",tp,       "\n\n",
-          "CLOSE ORDERS BY LOTS","\n",
-          "le = ",lastEquity,"\n",
-          "ne = ",nextEquity,"\n",
-          "e = ",AccountEquity(),"\n\n",
-          "next DD = ",nextDD,"\n\n");
+          //"Lot = ", lot, "\n",
+          //"opened Vol BUY  = ",getOpenedVolum(0),"\n",
+          //"opened Vol SELL = ",getOpenedVolum(1),"\n\n");
+          //"lastCrossMA     = ",lastCrossMA, "\n\n",
+          //"max vol BUY     = ", maxVolBUY,"\n",
+          //"max vol SELL    = ", maxVolSELL,"\n\n",
+          //"max DroDown = ", maxDDPercent,"% \n",
+          //"this DD     = ",dd,"% \n\n",
+          //"Target = ", Target,  "\n",
+          //"tp     = ",tp,       "\n\n",
+          //"CLOSE ORDERS BY LOTS","\n",
+          //"le = ",lastEquity,"\n",
+          //"ne = ",nextEquity,"\n",
+          //"e = ",AccountEquity(),"\n\n",
+          //"next DD = ",nextDD,"\n\n");
 /**/
-   Comment(strComm);
+   showComment(strCommMain, strCommBO, strCommUPTOMA);
    isDone = true;
    return(0);
 }
-//========================}} 
+//}======================== 
 
 void OpenPendingOrders(int magicBUY = 0, int magicSELL = 0){
 int res = -1;
