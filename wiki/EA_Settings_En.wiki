@@ -20,7 +20,7 @@
     * mgp_useLimOrders = true / false - enables an adviser to limit use of the grid
     * mgp_LimLevels - Limit the number of levels of the grid, including the parent of a warrant
   ==== Setting the averaging ====
-    * mgp_plusVol - an increase of the trace. level by an amount mgp_plusVol (+)
+    * mgp_plusVol - an increase of the Lot. level by an amount mgp_plusVol (+)
     * mgp_multiplyVol - an increase of the trace. level mgp_multiplyVol times (*)
 Setting up an additional limit order after operation, an additional limit order is an order to be a parent of a grid of the second order agreement: a grid for an additional warrant is calculated from the grid configuration settings Limit
 add_useAddLimit = true / false - enables an adviser to put an additional limit order as a parent
