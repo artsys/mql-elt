@@ -1,3 +1,4 @@
+#labels Settings
 <wiki:toc depth="7">
 
 = Basic settings =
