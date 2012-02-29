@@ -20,36 +20,41 @@
     * mgp_useLimOrders = true / false - enables an adviser to limit use of the grid
     * mgp_LimLevels - Limit the number of levels of the grid, including the parent of a warrant
   ==== Setting the averaging ====
-    * mgp_plusVol - an increase of the Lot. level by an amount mgp_plusVol (+)
-    * mgp_multiplyVol - an increase of the trace. level mgp_multiplyVol times (*)
-Setting up an additional limit order after operation, an additional limit order is an order to be a parent of a grid of the second order agreement: a grid for an additional warrant is calculated from the grid configuration settings Limit
-add_useAddLimit = true / false - enables an adviser to put an additional limit order as a parent
-add_LimitLevel - the level of the grid on which the price will be calculated incremental order
-add_Limit_Pip - how many points will be put on the level of an additional order
-add_Limit_useLevelVol = true / false - enables an adviser to use a different configuration will be used add_Limit_multiplyVol add_Limit_fixVol
-add_Limit_multiplyVol - coefficients. multiplying the volume level of the main grid add_LimitLevel limit orders
-add_Limit_fixVol - a fixed amount of additional orders
-Setting up additional orders after the stop trigger, an additional stop order is an order to be a parent of a grid of order
+    * mgp_plusVol - an increase of the Lot. level by an amount mgp_plusVol
+    * mgp_multiplyVol - an increase of the trace. level mgp_multiplyVol times
+  === Setting up an additional limit order ===
+ after operation, an additional limit order is an order to be a parent of a grid of the second order agreement: a grid for an additional warrant is calculated from the grid configuration settings Limit
+    * add_useAddLimit = true / false - enables an adviser to put an additional limit order as a parent
+    * add_LimitLevel - the level of the grid on which the price will be calculated incremental order
+    * add_Limit_Pip - how many points will be put on the level of an additional order
+    * add_Limit_useLevelVol = true / false - enables an adviser to use a different configuration will be used add_Limit_multiplyVol add_Limit_fixVol
+    * add_Limit_multiplyVol - coefficients. multiplying the volume level of the main grid add_LimitLevel limit orders
+    * add_Limit_fixVol - a fixed amount of additional orders
+
+  === Setting up additional stop order ===
+after the stop trigger, an additional stop order is an order to be a parent of a grid of order
 Agreement: a grid for an additional warrant is calculated from the grid configuration Limit
-add_useAddStop = true / false - enables an adviser to put an additional stop order as the parent
-add_StopLevel - the level of the grid on which the price will be calculated an additional warrant. Parental Order is on the 1st level
-add_Stop_Pip - how many points will be put on the level of an additional order
-add_Stop_useLevelVol = true / false - enables an adviser to use a different configuration will be used add_Stop_multiplyVol add_Stop_fixVol
-add_Stop_multiplyVol - coefficients. multiplying the volume level of the main grid add_StopLevel limit orders
-add_Stop_fixVol - a fixed amount of additional orders
-Stop orders and child grid
-Setting of stop orders
-SO_useStopLevels = true / false - enables an adviser to use the nomination of stop orders
-SO_Levels - 1 - number of levels coincides with the levels of limit orders, or sets of stop levels kolichetvo
-SO_StartLevel - the level at which stop orders are set for the parent. The parent has an index of a warrant
-SO_useLimLevelVol = true / false - enables use of the volume of the current level of Limit grid to calculate the volume of stop orders
-SO_LimLevelVol_Divide - dividing the volume of lymph. order to calculate the amount of feet. to the level of LevelVolParent. For -1 exhibited the parent volume
-SO_EndLevel - Settings SO_useLimLevelVol SO_LimLevelVol_Divide and will be used to this level including
-SO_ContinueLevel - Includes up to this level and will continue to exhibit SO_Levels stop orders.
-SO_ContLevelVol_Divide - To calculate the amount of value is the amount of current Limit level.
-Setting child grids
-SO_useKoefProp true / false - enables an adviser to use a target with the settings, m and lyrics for the child grid as a coefficient. multiplication with respect to the settings of the parent grid.
-SO_Target - depending on SO_useKoefProp will be set to target with before. net * SO_Target, or fix a point value, converted to an integer, for any child of the grid.
-SO_TP - a description similar to before. setting
-SO_TP_on_first - a description similar to before. setup, only with a delay of one order
-SO_SL - a description similar to before. setting
+    * add_useAddStop = true / false - enables an adviser to put an additional stop order as the parent
+    * add_StopLevel - the level of the grid on which the price will be calculated an additional warrant. Parental Order is on the 1st level
+    * add_Stop_Pip - how many points will be put on the level of an additional order
+    * add_Stop_useLevelVol = true / false - enables an adviser to use a different configuration will be used add_Stop_multiplyVol add_Stop_fixVol
+    * add_Stop_multiplyVol - coefficients. multiplying the volume level of the main grid add_StopLevel limit orders
+    * add_Stop_fixVol - a fixed amount of additional orders
+
+  == Stop orders and child grid ==
+
+  === Setting of stop orders ===
+    * SO_useStopLevels = true / false - enables an adviser to use the nomination of stop orders
+    * SO_Levels - 1 - number of levels coincides with the levels of limit orders, or sets of stop levels kolichetvo
+    * SO_StartLevel - the level at which stop orders are set for the parent. The parent has an index of a warrant
+    * SO_useLimLevelVol = true / false - enables use of the volume of the current level of Limit grid to calculate the volume of stop orders
+    * SO_LimLevelVol_Divide - dividing the volume of lymph. order to calculate the amount of feet. to the level of LevelVolParent. For -1 exhibited the parent volume
+    * SO_EndLevel - Settings SO_useLimLevelVol SO_LimLevelVol_Divide and will be used to this level including
+    * SO_ContinueLevel - Includes up to this level and will continue to exhibit SO_Levels stop orders.
+    * SO_ContLevelVol_Divide - To calculate the amount of value is the amount of current Limit level.
+  === Setting child grids ===
+    * SO_useKoefProp true / false - enables an adviser to use a target with the settings, m and lyrics for the child grid as a coefficient. multiplication with respect to the settings of the parent grid.
+    * SO_Target - depending on SO_useKoefProp will be set to target with before. net * SO_Target, or fix a point value, converted to an integer, for any child of the grid.
+    * SO_TP - a description similar to before. setting
+    * SO_TP_on_first - a description similar to before. setup, only with a delay of one order
+    * SO_SL - a description similar to before. setting
