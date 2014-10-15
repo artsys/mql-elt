@@ -32,7 +32,7 @@
 					в самом модуле
 	
 /*///=================================================================== 
-#property copyright "copyright (c) 2008-2011, Morochin <artamir> Artiom"
+#property copyright "copyright (c) 2008-2014, Morochin <artamir> Artiom"
 #property link      "http://forexmd.ucoz.org, mailto: artamir@yandex.ru"
 
 /*///===================================================================
@@ -57,7 +57,7 @@
 #define		CHK_TYEQ			200
 
 #define		EXP_NAME			"eLT_v2"
-#define		EXP_Ver				"2.0.1 2012.02.02 15:40"
+#define		EXP_Ver				"2.1.0 2014.10.15"
 
 #define  TL_COUNT				1	// TL - Twise lot
 #define  TL_VOL					2	// TL - Twise lot

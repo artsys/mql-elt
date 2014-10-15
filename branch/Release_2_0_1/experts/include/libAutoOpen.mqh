@@ -252,6 +252,166 @@ void libAO_BarOpen(){
 	}
 //}
 
+//{ --- MA envelope
+#define MAENVInBUY "oMEIB"
+#define MAENVInSELL "oMEIS"
+
+extern string libAO_MAEnvIn=">>>>>>>>>> MA Envelopes in";
+	extern bool libAO_MAEnvIn_useOpen=false;
+		extern int libAO_MAEnvIn_MAPer=50;
+		extern int libAO_MAEnvIn_MAMethod=1;
+		extern int libAO_MAEnvIn_MAAppPr=0;
+		extern string libAO_MAEnvIn_Levels="50;-50;100;-100;200;-200;300;-300";
+	void libAO_MAEnvIn_Open(){
+		int sig[];
+		libAO_MAEnvIn_Signal(sig);
+		
+		if(sig[0]<=-1){
+			return;
+		}
+		
+		if(isOrderWithParam("@o", "MEIB", "", MN, -1) ||
+			isOrderWithParam("@o", "MEIS", "", MN, -1)){
+				return;	
+		}
+		
+		if(sig[0]==OP_BUYSTOP){
+			OpenMarketSLTP_pip(	Symbol(),OP_BUY,libAL_CalcLots(),0,0,0,"@ip1@oMEIB",MN,0,CLR_NONE);
+		}
+		
+		if(sig[0]==OP_SELLSTOP){
+			OpenMarketSLTP_pip(	Symbol(),OP_SELL,libAL_CalcLots(),0,0,0,"@ip1@oMEIS",MN,0,CLR_NONE);
+		}
+	}
+	
+	void libAO_MAEnvIn_Signal(int &sig[]){
+	   
+	   ArrayResize(sig,0);
+	   ArrayResize(sig,2);
+	   double ma=iMA(NULL,0,libAO_MAEnvIn_MAPer,0,libAO_MAEnvIn_MAMethod,libAO_MAEnvIn_MAAppPr,1);
+	   
+	   string asMALvl[];
+	   ArrayResize(asMALvl,0);
+	   StringToArrayString(libAO_MAEnvIn_Levels,asMALvl,";");//,";");
+	   
+	   int rows=ArrayRange(asMALvl,0);
+	   for(int i=0;i<rows;i++){
+		  string sMALvl=asMALvl[i];
+		  int iMALvl=StrToInteger(sMALvl);
+		  double dMALvl=ma+iMALvl*Point;
+		  if(iMALvl!=0){
+			 if(High[1]>dMALvl && Low[1]<dMALvl){
+				if(iMALvl<0){
+				   sig[0]=OP_BUYSTOP;
+				}else{
+				   sig[0]=OP_SELLSTOP;
+				}
+				sig[1]=iMALvl;
+			 }
+		  }
+	   }
+	   
+	}
+
+// }
+
+//{ --- MA envelope
+#define MAENVOutBUY "oMEOB"
+#define MAENVOutSELL "oMEOS"
+
+extern string libAO_MAEnvOut=">>>>>>>>>> MA Envelopes out";
+	extern bool libAO_MAEnvOut_useOpen=false;
+		extern int libAO_MAEnvOut_MAPer=50;
+		extern int libAO_MAEnvOut_MAMethod=1;
+		extern int libAO_MAEnvOut_MAAppPr=0;
+		extern string libAO_MAEnvOut_Levels="50;-50;100;-100;200;-200;300;-300";
+	void libAO_MAEnvOut_Open(){
+		int sig[];
+		libAO_MAEnvOut_Signal(sig);
+		
+		if(sig[0]<=-1){
+			return;
+		}
+		
+		if(isOrderWithParam("@o", "MEOB", "", MN, -1) ||
+			isOrderWithParam("@o", "MEOS", "", MN, -1)){
+				return;	
+		}
+		
+		if(sig[0]==OP_BUYSTOP){
+			OpenMarketSLTP_pip(	Symbol(),OP_BUY,libAL_CalcLots(),0,0,0,"@ip1@oMEOB",MN,0,CLR_NONE);
+		}
+		
+		if(sig[0]==OP_SELLSTOP){
+			OpenMarketSLTP_pip(	Symbol(),OP_SELL,libAL_CalcLots(),0,0,0,"@ip1@oMEOS",MN,0,CLR_NONE);
+		}
+	}
+	
+	void libAO_MAEnvOut_Signal(int &sig[]){
+	   
+	   ArrayResize(sig,0);
+	   ArrayResize(sig,2);
+	   double ma=iMA(NULL,0,libAO_MAEnvOut_MAPer,0,libAO_MAEnvOut_MAMethod,libAO_MAEnvOut_MAAppPr,1);
+	   
+	   string asMALvl[];
+	   ArrayResize(asMALvl,0);
+	   StringToArrayString(libAO_MAEnvOut_Levels,asMALvl,";");//,";");
+	   
+	   int rows=ArrayRange(asMALvl,0);
+	   for(int i=0;i<rows;i++){
+		  string sMALvl=asMALvl[i];
+		  int iMALvl=StrToInteger(sMALvl);
+		  double dMALvl=ma+iMALvl*Point;
+		  if(iMALvl!=0){
+			 if(High[1]>dMALvl && Low[1]<dMALvl){
+				if(iMALvl<0){
+				   sig[0]=OP_SELLSTOP;
+				}else{
+				   sig[0]=OP_BUYSTOP;
+				}
+				sig[1]=iMALvl;
+			 }
+		  }
+	   }
+	   
+	}
+
+// int StringToArrayString(string &a[], string s, string del = ";"){
+	// /**
+		// \version	0.0.0.1
+		// \date		2013.06.12
+		// \author		Morochin <artamir> Artiom
+		// \details	Разбивает строку на подстроки разделителем. если разделителя нет, то в массиве возврящается строка.
+		// \internal
+			// >Hist:	
+					 // @0.0.0.1@2013.06.12@artamir	[]	StringToArray
+			// >Rev:0
+	// */
+	// string fn="StringToArrayString";
+	// int pR = StringFind(s, del, 0);
+	// int rows = ArrayRange(a,0);
+	// int lastROW = rows-1;
+	// if(pR > -1){
+		// rows = rows + 1;
+		// ArrayResize(a, rows);
+		
+		// lastROW++;
+		// a[lastROW] = StringSubstr(s, 0, pR);
+		// s=StringSubstr(s, pR+StringLen(del), StringLen(s)-pR+StringLen(del));
+		// rows=StringToArrayString(a, s, del);
+	// }else{
+		// rows = rows + 1;
+		// ArrayResize(a, rows);
+		
+		// lastROW++;
+		// a[lastROW] = s;
+		// return(rows);
+	// }
+	
+	// return(rows);
+// }
+
+
 void libAO_MAIN(){
 	//Начальные проверки по автооткрытию
 	//сюда нужно дописывать процедуры 
@@ -263,5 +423,13 @@ void libAO_MAIN(){
 	//---
 	if(libAO_needBarsOpen){
 		libAO_BarOpen();
+	}
+	
+	if(libAO_MAEnvIn_useOpen){
+		libAO_MAEnvIn_Open();
+	}
+	
+	if(libAO_MAEnvOut_useOpen){
+		libAO_MAEnvOut_Open();
 	}
 }
